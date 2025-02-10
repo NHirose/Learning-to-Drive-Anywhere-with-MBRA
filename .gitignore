@@ -6,5 +6,5 @@ __pycache__/
 dataset
 lerobot
 map_cache
-train/vint_traindata/sampler
+train/vint_train/data/sampler
 download_youtube/videos
