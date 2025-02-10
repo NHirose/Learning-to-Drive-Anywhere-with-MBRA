@@ -1,0 +1,10 @@
+train/wandb
+train/logs
+deployment/model_weights
+__pycache__/
+*.pyc
+dataset
+lerobot
+map_cache
+train/vint_traindata/sampler
+download_youtube/videos
