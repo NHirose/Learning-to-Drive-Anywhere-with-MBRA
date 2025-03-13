@@ -70,7 +70,7 @@ Please down load our code and install some tools for making a conda environment 
     ```
     cd ../train/
     ```
-1. Edit the yaml files to make a path for all datasets
+1. Edit the yaml files in (your-directory)/Learning-to-Drive-Anywhere-via-MBRA/train/config to make a path for all datasets and checkpoints
 
 2. Train the re-labeler, imitation-MBRA
     ```
@@ -88,50 +88,18 @@ Please down load our code and install some tools for making a conda environment 
     ```
     python train.py -c ./config/LogoNav_exaug_label.yaml
     ```
+### Inference
+1. Now we released the trained checkpoints. We will release the code soon. 
+
     
 ## Citing
 Our main project
 ```
-@inproceedings{hirose2024lelan,
-  title     = {LeLaN: Learning A Language-conditioned Navigation Policy from In-the-Wild Video},
-  author    = {Noriaki Hirose and Catherine Glossop and Ajay Sridhar and Oier Mees and Sergey Levine},
-  booktitle = {8th Annual Conference on Robot Learning},
-  year      = {2024},
+@inproceedings{hirose2025mbra,
+  title     = {Learning to Drive Anywhere via Model-based Reannotation},
+  author    = {Noriaki Hirose and Lydia Ignatova and Kyle Stachowicz, Catherine Glossop and Sergey Levine and Dhruv Shah},
+  booktitle = {arXiv},
+  year      = {2025},
   url       = {https://arxiv.org/abs/xxxxxxxx}
 }
 ```
-Robotic navigation dataset: GO Stanford 2
-```
-@inproceedings{hirose2018gonet,
-  title={Gonet: A semi-supervised deep learning approach for traversability estimation},
-  author={Hirose, Noriaki and Sadeghian, Amir and V{\'a}zquez, Marynel and Goebel, Patrick and Savarese, Silvio},
-  booktitle={2018 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
-  pages={3044--3051},
-  year={2018},
-  organization={IEEE}
-}
-```
-Robotic navigation dataset: GO Stanford 4
-```
-@article{hirose2019deep,
-  title={Deep visual mpc-policy learning for navigation},
-  author={Hirose, Noriaki and Xia, Fei and Mart{\'\i}n-Mart{\'\i}n, Roberto and Sadeghian, Amir and Savarese, Silvio},
-  journal={IEEE Robotics and Automation Letters},
-  volume={4},
-  number={4},
-  pages={3184--3191},
-  year={2019},
-  publisher={IEEE}
-}
-```
-Robotic navigation dataset: SACSoN(HuRoN)
-```
-@article{hirose2023sacson,
-  title={Sacson: Scalable autonomous control for social navigation},
-  author={Hirose, Noriaki and Shah, Dhruv and Sridhar, Ajay and Levine, Sergey},
-  journal={IEEE Robotics and Automation Letters},
-  year={2023},
-  publisher={IEEE}
-}
-```
-
