@@ -1335,7 +1335,8 @@ def train_exaug_dist_gnm_delay(
     model_depth,
     model_pedtraj,
     device2,      
-    len_traj_pred: int,       
+    len_traj_pred: int, 
+    batch_size: int,      
     alpha: float = 1e-4,
     print_log_freq: int = 100,
     wandb_log_freq: int = 10,
@@ -1391,8 +1392,8 @@ def train_exaug_dist_gnm_delay(
     mask_360_torch = torch.from_numpy(mask_360_resize[:,:,0:416]).unsqueeze(0).to(device2)
     dataloader_sub_iter = iter(dataloader_sub)
 
-    linear_vel_old = 0.5*torch.rand(100, 8).float().to(device)
-    angular_vel_old = 1.0*torch.rand(100, 8).float().to(device)
+    linear_vel_old = 0.5*torch.rand(batch_size, 8).float().to(device)
+    angular_vel_old = 1.0*torch.rand(batch_size, 8).float().to(device)
                   
     with tqdm.tqdm(dataloader, desc="Train Batch", leave=False) as tepoch:
         for i, data in enumerate(tepoch):
@@ -2608,10 +2609,7 @@ def train_il_exaug_dist_gnm_gps_map(
         "action_loss": action_loss_logger,                
     }
     
-    D = np.array(np.load('/media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/train/vint_train/training/fisheye_calibration/D.npy', mmap_mode='r'))
-    K = np.array(np.load('/media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/train/vint_train/training/fisheye_calibration/K.npy', mmap_mode='r'))
-
-    mask_360 = np.loadtxt(open("/media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/train/mask_360view.csv", "rb"), delimiter=",", skiprows=0)   
+    mask_360 = np.loadtxt(open("./mask_360view.csv", "rb"), delimiter=",", skiprows=0)   
     mask_360_resize = np.repeat(np.expand_dims(cv2.resize(mask_360, (832, 128)), 0), 3, 0).astype(np.float32)
     mask_360_torch = torch.from_numpy(mask_360_resize[:,:,0:416]).unsqueeze(0).to(device)
                
@@ -3418,6 +3416,7 @@ def evaluate_exaug_dist_gnm_delay(
     model_pedtraj,
     device2,         
     len_traj_pred: int,    
+    batch_size: int,
     print_log_freq: int = 100,
     wandb_log_freq: int = 10,
     image_log_freq: int = 1000,
@@ -3478,8 +3477,8 @@ def evaluate_exaug_dist_gnm_delay(
     mask_360_resize = np.repeat(np.expand_dims(cv2.resize(mask_360, (832, 128)), 0), 3, 0).astype(np.float32)
     mask_360_torch = torch.from_numpy(mask_360_resize[:,:,0:416]).unsqueeze(0).to(device2)
 
-    linear_vel_old = 0.5*torch.rand(100, 8).float().to(device)
-    angular_vel_old = 1.0*torch.rand(100, 8).float().to(device)
+    linear_vel_old = 0.5*torch.rand(batch_size, 8).float().to(device)
+    angular_vel_old = 1.0*torch.rand(batch_size, 8).float().to(device)
     
     with tqdm.tqdm(
         itertools.islice(dataloader, num_batches), 
@@ -4096,10 +4095,7 @@ def evaluate_il_dist_gnm_gps_map(
         "action_loss": action_loss_logger,                     
     }
     
-    D = np.array(np.load('/media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/train/vint_train/training/fisheye_calibration/D.npy', mmap_mode='r'))
-    K = np.array(np.load('/media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/train/vint_train/training/fisheye_calibration/K.npy', mmap_mode='r'))
-
-    mask_360 = np.loadtxt(open("/media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/train/mask_360view.csv", "rb"), delimiter=",", skiprows=0)    
+    mask_360 = np.loadtxt(open("./mask_360view.csv", "rb"), delimiter=",", skiprows=0)    
     mask_360_resize = np.repeat(np.expand_dims(cv2.resize(mask_360, (832, 128)), 0), 3, 0).astype(np.float32)
     mask_360_torch = torch.from_numpy(mask_360_resize[:,:,0:416]).unsqueeze(0).to(device2)
     

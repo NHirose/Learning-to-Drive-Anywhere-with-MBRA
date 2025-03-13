@@ -4,7 +4,7 @@ SACSoN: False
 keep_learning: True
 
 repo_id: frodobots_dataset
-root: /media/noriaki/Noriaki_Data
+root: <location of your frodobots dataset>
 episode-index: 0
 
 late_fusion: False
@@ -12,7 +12,7 @@ late_fusion: False
 # training setup
 use_wandb: True # set to false if you don't want to log to wandb
 train: True
-batch_size: 150
+batch_size: 100
 eval_batch_size: 100
 epochs: 200
 gpu_ids: [0]
@@ -47,7 +47,7 @@ down_dims: [64, 128, 256]
 num_diffusion_iters: 10
 
 # FrodoBot dataset ratio
-ratio_f: 0.1
+ratio_f: 0.9
 horizon_short: 20
 
 # mask 
@@ -58,8 +58,7 @@ normalize: True
 
 # context
 context_type: temporal
-context_size: 5 # 5
-#alpha: 1e-4
+context_size: 5
 alpha: 0.5
 
 # distance bounds for distance and action and distance predictions 
@@ -85,84 +84,64 @@ datasets:
     
 datasets_sub:
   recon:
-    data_folder: /media/noriaki/Noriaki_Data/gnm_dataset/recon
-    train: /media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/data_splits/recon/train/ # path to train folder with traj_names.txt
-    test: /media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/data_splits/recon/test/ # path to test folder with traj_names.txt
-    end_slack: 3 # because many trajectories end in collisions
-    goals_per_obs: 1 # how many goals are sampled per observation
+    data_folder: <location of your GNM dataset>/recon
+    train: <location of your directory>/Learning-to-Drive-Anywhere-via-MBRA/data_splits/recon/train/
+    test: <location of your directory>/Learning-to-Drive-Anywhere-via-MBRA/data_splits/recon/test/
+    end_slack: 3
+    goals_per_obs: 1
     negative_mining: True # negative mining from the ViNG paper (Shah et al.)
   go_stanford:
-    data_folder: /media/noriaki/Noriaki_Data/gnm_dataset/go_stanford_cropped # datasets/stanford_go_new
-    train: /media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/data_splits/go_stanford/train/
-    test: /media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/data_splits/go_stanford/test/
+    data_folder: <location of your GNM dataset>/go_stanford_cropped
+    train: <location of your directory>/Learning-to-Drive-Anywhere-via-MBRA/data_splits/go_stanford/train/
+    test: <location of your directory>/Learning-to-Drive-Anywhere-via-MBRA/data_splits/go_stanford/test/
     end_slack: 0
-    goals_per_obs: 2 # increase dataset size
+    goals_per_obs: 2
     negative_mining: True
   cory_hall:
-    data_folder: /media/noriaki/Noriaki_Data/gnm_dataset/cory_hall
-    train: /media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/data_splits/cory_hall/train/
-    test: /media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/data_splits/cory_hall/test/
-    end_slack: 3 # because many trajectories end in collisions
+    data_folder: <location of your GNM dataset>/cory_hall
+    train: <location of your directory>/Learning-to-Drive-Anywhere-via-MBRA/data_splits/cory_hall/train/
+    test: <location of your directory>/Learning-to-Drive-Anywhere-via-MBRA/data_splits/cory_hall/test/
+    end_slack: 3
     goals_per_obs: 1
     negative_mining: True
   tartan_drive:
-    data_folder: /media/noriaki/Noriaki_Data/gnm_dataset/tartan_drive
-    train: /media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/data_splits/tartan_drive/train/
-    test: /media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/data_splits/tartan_drive/test/
-    end_slack: 3 # because many trajectories end in collisions
+    data_folder: <location of your GNM dataset>/tartan_drive
+    train: <location of your directory>/Learning-to-Drive-Anywhere-via-MBRA/data_splits/tartan_drive/train/
+    test: <location of your directory>/Learning-to-Drive-Anywhere-via-MBRA/data_splits/tartan_drive/test/
+    end_slack: 3
     goals_per_obs: 1
     negative_mining: True
   sacson:
-    data_folder: /media/noriaki/Noriaki_Data/gnm_dataset/sacson
-    train: /media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/data_splits/sacson/train/
-    test: /media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/data_splits/sacson/test/
-    end_slack: 3 # because many trajectories end in collisions
+    data_folder: <location of your GNM dataset>/sacson
+    train: <location of your directory>/Learning-to-Drive-Anywhere-via-MBRA/data_splits/sacson/train/
+    test: <location of your directory>/Learning-to-Drive-Anywhere-via-MBRA/data_splits/sacson/test/
+    end_slack: 3
     goals_per_obs: 1
     negative_mining: True
 
   seattle:
-    data_folder: /media/noriaki/Noriaki_Data/gnm_dataset/seattle/
-    train: /media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/data_splits/seattle/train/
-    test: /media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/data_splits/seattle/test/
+    data_folder: <location of your GNM dataset>/seattle/
+    train: <location of your directory>/Learning-to-Drive-Anywhere-via-MBRA/data_splits/seattle/train/
+    test: <location of your directory>/Learning-to-Drive-Anywhere-via-MBRA/data_splits/seattle/test/
     end_slack: 0
     goals_per_obs: 1
     negative_mining: True
   scand:
-    data_folder: /media/noriaki/Noriaki_Data/gnm_dataset/scand/
-    train: /media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/data_splits/scand/train/
-    test: /media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/data_splits/scand/test/
+    data_folder: <location of your GNM dataset>/scand/
+    train: <location of your directory>/Learning-to-Drive-Anywhere-via-MBRA/data_splits/scand/train/
+    test: <location of your directory>/Learning-to-Drive-Anywhere-via-MBRA/data_splits/scand/test/
     end_slack: 0
     goals_per_obs: 1
     negative_mining: True
-    
-  # private datasets (uncomment if you have access)
-  # seattle:
-  #   data_folder: /home/<username>/nomad_dataset/seattle/
-  #   train: /home/<username>/data_splits/seattle/train/
-  #   test: /home/<username>/data_splits/seattle/test/
-  #   end_slack: 0
-  #   goals_per_obs: 1
-  #   negative_mining: True
-  # scand:
-  #   data_folder: /home/<username>/nomad_dataset/scand/
-  #   train: /home/<username>/data_splits/scand/train/
-  #   test: /home/<username>/data_splits/scand/test/
-  #   end_slack: 0
-  #   goals_per_obs: 1
-  #   negative_mining: True
 
 # logging stuff
-## =0 turns off
 print_log_freq: 100 # in iterations
 image_log_freq: 1000 #0 # in iterations
 
-#print_log_freq: 10 # in iterations
-#image_log_freq: 10 #0 # in iterations
 
 num_images_log: 30 #0 
 pairwise_test_freq: 0 # in epochs
 eval_fraction: 0.05
-#eval_fraction: 0.9
 wandb_log_freq: 10 # in iterations
 eval_freq: 1 # in epochs
 

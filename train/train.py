@@ -23,7 +23,7 @@ IMPORT YOUR MODEL HERE
 from vint_train.models.gnm.gnm import GNM
 from vint_train.models.vint.vint import ViNT
 from vint_train.models.exaug.exaug import ExAug_dist_delay
-from vint_train.models.il.il import IL_dist, IL_gps, IL_gps_map_mask
+from vint_train.models.il.il import IL_dist, IL_gps
 from vint_train.models.vint.vit import ViT
 from vint_train.models.nomad.nomad import NoMaD, DenseNetwork
 from vint_train.models.nomad.nomad_vint import NoMaD_ViNT, replace_bn_with_gn
@@ -34,7 +34,7 @@ from vint_train.models.lelan.lelan_comp import LeLaN_clip_FiLM, LeLaN_clip_FiLM_
 
 from vint_train.data.vint_dataset import ViNT_Dataset, ViNT_Dataset_fix, ViNT_Dataset_gps, ViNT_ExAug_Dataset
 from vint_train.data.lelan_dataset import LeLaN_Dataset
-from vint_train.data.vint_hf_dataset import ViNTLeRobotDataset, ViNTLeRobotDataset_IL2, ViNTLeRobotDataset_IL2_gps, ViNTLeRobotDataset_IL2_gps_map, EpisodeSampler_IL
+from vint_train.data.vint_hf_dataset import ViNTLeRobotDataset, ViNTLeRobotDataset_IL2, ViNTLeRobotDataset_IL2_gps, EpisodeSampler_IL
 
 from vint_train.training.train_eval_loop import (
     train_eval_loop,
@@ -44,8 +44,7 @@ from vint_train.training.train_eval_loop import (
     train_eval_loop_lelan_col,
     train_eval_loop_il_dist_gnm,            
     train_eval_loop_il2_dist_gnm_gps,      
-    train_eval_loop_il_exaug_dist_gnm_gps, 
-    train_eval_loop_il_exaug_dist_gnm_gps_map,       
+    train_eval_loop_il_exaug_dist_gnm_gps,   
     load_model,
 )
 
@@ -142,10 +141,7 @@ def main(config):
                             episode_sampler_train = EpisodeSampler_IL(dataset, 0, split_train_test, goal_horizon=config["horizon_short"], data_split_type=data_split_type)       
                         elif config["model_type"] == "il2_gps" or config["model_type"] == "il_exaug_gps":        
                             dataset = ViNTLeRobotDataset_IL2_gps(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], goal_horizon2=config["horizon_long"], sacson=config["SACSoN"], context_spacing=3, action_spacing=3)                                          
-                            episode_sampler_train = EpisodeSampler_IL(dataset, 0, split_train_test, goal_horizon=config["horizon_short"], data_split_type=data_split_type)             
-                        elif config["model_type"] == "il_exaug_gps_map":        
-                            dataset = ViNTLeRobotDataset_IL2_gps_map(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], goal_horizon2=config["horizon_long"], sacson=config["SACSoN"], context_spacing=3, action_spacing=3)                                          
-                            episode_sampler_train = EpisodeSampler_IL(dataset, 0, split_train_test, goal_horizon=config["horizon_short"], data_split_type=data_split_type)                                     
+                            episode_sampler_train = EpisodeSampler_IL(dataset, 0, split_train_test, goal_horizon=config["horizon_short"], data_split_type=data_split_type)                                             
                         else:
                             dataset = ViNTLeRobotDataset(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], sacson=config["SACSoN"], context_spacing=3, action_spacing=1)                                                                                        
                             episode_sampler_train = EpisodeSampler_IL(dataset, 0, split_train_test, goal_horizon=config["horizon_short"], data_split_type=data_split_type)                                                 
@@ -155,10 +151,7 @@ def main(config):
                             episode_sampler_test = EpisodeSampler_IL(dataset, split_train_test, 11994-1, goal_horizon=config["horizon_short"], data_split_type=data_split_type)  
                         elif config["model_type"] == "il2_gps" or config["model_type"] == "il_exaug_gps": 
                             dataset = ViNTLeRobotDataset_IL2_gps(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], goal_horizon2=config["horizon_long"], sacson=config["SACSoN"], context_spacing=3, action_spacing=3)                  
-                            episode_sampler_test = EpisodeSampler_IL(dataset, split_train_test, 11994-1, goal_horizon=config["horizon_short"], data_split_type=data_split_type)          
-                        elif config["model_type"] == "il_exaug_gps_map": 
-                            dataset = ViNTLeRobotDataset_IL2_gps_map(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], goal_horizon2=config["horizon_long"], sacson=config["SACSoN"], context_spacing=3, action_spacing=3)                  
-                            episode_sampler_test = EpisodeSampler_IL(dataset, split_train_test, 11994-1, goal_horizon=config["horizon_short"], data_split_type=data_split_type)                                                                           
+                            episode_sampler_test = EpisodeSampler_IL(dataset, split_train_test, 11994-1, goal_horizon=config["horizon_short"], data_split_type=data_split_type)                                                                                   
                         else:
                             dataset = ViNTLeRobotDataset(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], sacson=config["SACSoN"], context_spacing=3, action_spacing=1)                                                 
                             episode_sampler_test = EpisodeSampler_IL(dataset, split_train_test, 11994-1, goal_horizon=config["horizon_short"], data_split_type=data_split_type)                                               
@@ -228,7 +221,7 @@ def main(config):
                             normalize=config["normalize"],
                             goal_type=config["goal_type"],
                         )
-                    elif config["model_type"] == "il2_gps" or config["model_type"] == "il_exaug_gps" or config["model_type"] == "il_exaug_gps_map":
+                    elif config["model_type"] == "il2_gps" or config["model_type"] == "il_exaug_gps":
                         dataset = ViNT_Dataset_gps(
                             data_folder=data_config_sub["data_folder"],
                             data_split_folder=data_config_sub[data_split_type],
@@ -536,32 +529,7 @@ def main(config):
             mha_num_attention_heads=config["mha_num_attention_heads"],
             mha_num_attention_layers=config["mha_num_attention_layers"],
             mha_ff_dim_factor=config["mha_ff_dim_factor"],
-        )   
-
-    elif config["model_type"] == "il_exaug_gps_map":
-        model_GNM = ExAug_dist_delay(
-            context_size=config["context_size"],
-            len_traj_pred=config["len_traj_pred"],
-            learn_angle=config["learn_angle"],
-            obs_encoder=config["obs_encoder"],
-            obs_encoding_size=config["obs_encoding_size"],
-            late_fusion=config["late_fusion"],
-            mha_num_attention_heads=config["mha_num_attention_heads"],
-            mha_num_attention_layers=config["mha_num_attention_layers"],
-            mha_ff_dim_factor=config["mha_ff_dim_factor"],
-        )    
-        model = IL_gps_map_mask(        
-            context_size=config["context_size"],
-            len_traj_pred=config["len_traj_pred"],
-            learn_angle=config["learn_angle"],
-            obs_encoder=config["obs_encoder"],
-            obs_encoding_size=config["obs_encoding_size"],
-            late_fusion=config["late_fusion"],
-            mha_num_attention_heads=config["mha_num_attention_heads"],
-            mha_num_attention_layers=config["mha_num_attention_layers"],
-            mha_ff_dim_factor=config["mha_ff_dim_factor"],
-        )  
-                                
+        )                                  
     elif config["model_type"] == "lelan":
         if config["vision_encoder"] == "lelan_clip_film":
             vision_encoder = LeLaN_clip_FiLM(
@@ -723,7 +691,7 @@ def main(config):
             current_epoch = int((file_count - 3)) 
 
         if "load_exaug" in config:
-            load_project_folder_exaug = os.path.join("logs", config["load_exaug"])
+            load_project_folder_exaug = os.path.join(config["load_exaug"])
             print("Loading ExAug model from ", load_project_folder_exaug)
             latest_path_exaug = os.path.join(load_project_folder_exaug, "exaug_labeler.pth")
             latest_checkpoint_exaug = torch.load(latest_path_exaug) 
@@ -731,7 +699,7 @@ def main(config):
             model_GNM.eval().to(device)
 
         if "load_il" in config:
-            load_project_folder_IL = os.path.join("logs", config["load_il"])
+            load_project_folder_IL = os.path.join(config["load_il"])
             print("Loading IL model from ", load_project_folder_IL)
             latest_path_IL = os.path.join(load_project_folder_IL, "il_labeler.pth")
             latest_checkpoint_IL = torch.load(latest_path_IL) 
@@ -944,36 +912,7 @@ def main(config):
             use_wandb=config["use_wandb"],
             eval_fraction=config["eval_fraction"],
             eval_freq=config["eval_freq"],
-        )   
-    elif config["model_type"] == "il_exaug_gps_map":      
-        train_eval_loop_il_exaug_dist_gnm_gps_map(
-            train_model=config["train"],
-            model=model,
-            model_GNM=model_GNM,
-            optimizer=optimizer,
-            lr_scheduler=scheduler,
-            train_loader=train_loader,
-            test_dataloaders=test_dataloaders,
-            train_loader_sub=train_loader_sub,
-            test_dataloaders_sub=test_dataloaders_sub,            
-            transform=transform,
-            epochs=config["epochs"],
-            sacson=config["SACSoN"],
-            device=device,
-            batch_size=config["batch_size"],
-            batch_size_test=config["eval_batch_size"], 
-            len_traj_pred=config["len_traj_pred"],           
-            project_folder=config["project_folder"],
-            print_log_freq=config["print_log_freq"],
-            wandb_log_freq=config["wandb_log_freq"],
-            image_log_freq=config["image_log_freq"],
-            num_images_log=config["num_images_log"],
-            current_epoch=current_epoch,
-            alpha=float(config["alpha"]),
-            use_wandb=config["use_wandb"],
-            eval_fraction=config["eval_fraction"],
-            eval_freq=config["eval_freq"],
-        )                                                            
+        )                                                      
     else:
         train_eval_loop_nomad(
             train_model=config["train"],

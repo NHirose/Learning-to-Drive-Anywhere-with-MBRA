@@ -360,7 +360,7 @@ def train_eval_loop_exaug_dist_gnm_delay(
     print("device_count", torch.cuda.device_count()) 
     
     model_pedtraj = PedNet(8, 8).eval().to(device)
-    model_pedtraj_fn = os.path.join("/media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/deployment/model_weights/pedest", "pednet.pth")
+    model_pedtraj_fn = os.path.join("../deployment/model_weights/pedest", "pednet.pth")
     model_pedtraj.load_state_dict(unddp_state_dict(torch.load(model_pedtraj_fn, map_location=device)))
             
     for epoch in range(current_epoch, current_epoch + epochs):
@@ -387,7 +387,8 @@ def train_eval_loop_exaug_dist_gnm_delay(
                 model_depth=model_depth,
                 model_pedtraj=model_pedtraj,
                 device2=device2,            
-                len_traj_pred=len_traj_pred,                    
+                len_traj_pred=len_traj_pred,
+                batch_size=batch_size,                    
                 print_log_freq=print_log_freq,
                 wandb_log_freq=wandb_log_freq,
                 image_log_freq=image_log_freq,
@@ -437,7 +438,8 @@ def train_eval_loop_exaug_dist_gnm_delay(
                         model_depth=model_depth_test,
                         model_pedtraj=model_pedtraj,
                         device2=device2,             
-                        len_traj_pred=len_traj_pred,                                    
+                        len_traj_pred=len_traj_pred,   
+                        batch_size=batch_size_test,                                                           
                         print_log_freq=print_log_freq,
                         num_images_log=num_images_log,
                         wandb_log_freq=wandb_log_freq,

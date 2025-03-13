@@ -88,7 +88,6 @@ class ExAug_dist_delay(BaseModel):
             goal_encoding = self.goal_encoder.extract_features(goal_img)
         else:
             obsgoal_img = torch.cat([obs_img[:, 3*self.context_size:, :, :], goal_img], dim=1)
-            #print(obsgoal_img.size(), obs_img.size())
             goal_encoding = self.goal_encoder.extract_features(obsgoal_img)
         goal_encoding = self.goal_encoder._avg_pooling(goal_encoding)
         if self.goal_encoder._global_params.include_top:
@@ -126,7 +125,6 @@ class ExAug_dist_delay(BaseModel):
         # currently, the size is [batch_size, self.context_size+1, self.obs_encoding_size]
 
         # concatenate the goal encoding to the observation encoding
-        #print("encoding", obs_encoding.size(), goal_encoding.size())
         robot_size_repeat = robot_size.repeat(1,1,self.goal_encoding_size)
         delay_repeat = delay.repeat(1,1,self.goal_encoding_size)
         vel_past_repeat = vel_past.repeat(1,1,self.goal_encoding_size)

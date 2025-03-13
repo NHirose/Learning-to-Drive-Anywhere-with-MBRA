@@ -34,40 +34,59 @@ Please down load our code and install some tools for making a conda environment 
     ```
     conda activate mbra
     ```
-4. Install the lelan packages:
+4. Install the MBRA packages:
     ```
     pip install -e train/
     ```
 5. Install the `lerobot` package from this [repo](https://github.com/huggingface/lerobot):
     ```
     git clone https://github.com/huggingface/lerobot.git
+    cd lerobot
+    git checkout 97b1feb0b3c5f28c148dde8a9baf0a175be29d05
+    pip install -e .
     ``` 
 
-6. Download the mode weights from this [link](https://drive.google.com/file/d/1qsBVYfes8wE6HFbfBv30srLeoTtjai4l/view?usp=sharing)
+6. (Optional) Install the diffusion_policy package from this [repo](https://github.com/real-stanford/diffusion_policy): 
+    ```
+    git clone git@github.com:real-stanford/diffusion_policy.git
+    pip install -e diffusion_policy/
+    ```
 
-7. Download the map files from this [link](https://drive.google.com/file/d/1woJCPmk75qH7EIkMctyMMBAQDCphveqS/view?usp=sharing) (Note that we can not publish this map files due to the copyright.)
+6. Download the model weights from this [link](https://drive.google.com/file/d/1PwQAqC1doeU5rCda4ytil6eRMFuAzUbo/view?usp=sharing)
 
-8. Edit the yaml files to make a path for all datasets
+7. Unzip the downloaded weights and place the folder in (your-directory)/Learning-to-Drive-Anywhere-via-MBRA
 
-9. Train imitation-MBRA
+8. Download the sampler file from this [link](https://drive.google.com/file/d/1PwQAqC1doeU5rCda4ytil6eRMFuAzUbo/view?usp=sharing)
+
+9. Unzip the sampler file and place the folder in (your-directory)/Learning-to-Drive-Anywhere-via-MBRA/train/vint_train/data
+
+### Dataset
+1. Prepare GNM dataset mixture. Please check [here](https://github.com/robodhruv/visualnav-transformer/tree/main)
+
+2. Prepare Frodobots-2k dataset. The Frodobots-2k dataset will be available soon...
+
+### Training
+0. Change the directory
+    ```
+    cd ../train/
+    ```
+1. Edit the yaml files to make a path for all datasets
+
+2. Train the re-labeler, imitation-MBRA
     ```
     python train.py -c ./config/MBRA_il.yaml
     ```
-10. Train MPC-MBRA
+3. Train the re-labeler, MPC-MBRA
     ```
     python train.py -c ./config/MBRA_exaug.yaml
     ```
-11. Train LogoNav with imitation-MBRA
+4. Train the navigation policy, LogoNav with imitation-MBRA
     ```
     python train.py -c ./config/LogoNav_il_label.yaml
     ```
-12. Train LogoNav with MPC-MBRA
+5. Train the navigation policy, LogoNav with MPC-MBRA
     ```
     python train.py -c ./config/LogoNav_exaug_label.yaml
-    ```
-13. Train LogoNav using satellite map image with MPC-MBRA
-    ```
-    python train.py -c ./config/LogoNav_exaug_label_multi_task.yaml
     ```
     
 ## Citing
