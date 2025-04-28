@@ -1,4 +1,4 @@
-# Learning to Drive Anywhere via Model-Based Reannotation
+# Learning to Drive Anywhere with Model-Based Reannotation
 [![arXiv](https://img.shields.io/badge/arXiv-2407.08693-df2a2a.svg)](https://arxiv.org/pdf/2407.08693)
 [![Python](https://img.shields.io/badge/python-3.10-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
