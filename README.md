@@ -9,11 +9,7 @@
 
 <sup>1</sup> UC Berkeley (_Berkeley AI Research_),  <sup>2</sup> Toyota Motor North America,  <sup>3</sup> Princeton University
 
-We present LeLaN, a novel method leverages foundation models to label in-the-wild video data with
-language instructions for object navigation. We train an object navigation policy on this data, result-
-ing in state-of-the-art performance on challenging zero-shot language-conditioned object navigation
-task across a wide variety of indoor and outdoor environments.
-
+We present Model-Based ReAnnotation (MBRA), a framework that utilizes a learned short-horizon, model-based expert model to relabel or generate high-quality actions for passively collected data sources, including large volumes of crowd-sourced teleoperation data and unlabeled YouTube videos. This relabeled data is then distilled into LogoNav, a long-horizon navigation policy conditioned on visual goals or GPS waypoints. LogoNav, trained using MBRA-processed data, achieves state-of-the-art performance, enabling robust navigation over distances exceeding 300 meters in previously unseen indoor and outdoor environments.
 
 ![](media/teaser.png)
 
@@ -23,11 +19,11 @@ Please down load our code and install some tools for making a conda environment 
 
 1. Download the repository on your PC:
     ```
-    git clone https://github.com/NHirose/Learning-to-Drive-Anywhere-via-MBRA.git
+    git clone https://github.com/NHirose/Learning-to-Drive-Anywhere-with-MBRA.git
     ```
 2. Set up the conda environment:
     ```
-    cd Learning-to-Drive-Anywhere-via-MBRA
+    cd Learning-to-Drive-Anywhere-with-MBRA
     conda env create -f environment_mbra.yml
     ```
 3. Source the conda environment:
@@ -54,11 +50,11 @@ Please down load our code and install some tools for making a conda environment 
 
 6. Download the model weights from this [link](https://drive.google.com/file/d/1PwQAqC1doeU5rCda4ytil6eRMFuAzUbo/view?usp=sharing)
 
-7. Unzip the downloaded weights and place the folder in (your-directory)/Learning-to-Drive-Anywhere-via-MBRA
+7. Unzip the downloaded weights and place the folder in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA
 
 8. Download the sampler file from this [link](https://drive.google.com/file/d/1PwQAqC1doeU5rCda4ytil6eRMFuAzUbo/view?usp=sharing)
 
-9. Unzip the sampler file and place the folder in (your-directory)/Learning-to-Drive-Anywhere-via-MBRA/train/vint_train/data
+9. Unzip the sampler file and place the folder in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA/train/vint_train/data
 
 ### Dataset
 1. Prepare GNM dataset mixture. Please check [here](https://github.com/robodhruv/visualnav-transformer/tree/main)
@@ -70,7 +66,7 @@ Please down load our code and install some tools for making a conda environment 
     ```
     cd ../train/
     ```
-1. Edit the yaml files in (your-directory)/Learning-to-Drive-Anywhere-via-MBRA/train/config to make a path for all datasets and checkpoints
+1. Edit the yaml files in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA/train/config to make a path for all datasets and checkpoints
 
 2. Train the re-labeler, imitation-MBRA
     ```
