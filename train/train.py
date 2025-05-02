@@ -34,17 +34,15 @@ from vint_train.models.lelan.lelan_comp import LeLaN_clip_FiLM, LeLaN_clip_FiLM_
 
 from vint_train.data.vint_dataset import ViNT_Dataset, ViNT_Dataset_fix, ViNT_Dataset_gps, ViNT_ExAug_Dataset
 from vint_train.data.lelan_dataset import LeLaN_Dataset
-from vint_train.data.vint_hf_dataset import ViNTLeRobotDataset, ViNTLeRobotDataset_IL2, ViNTLeRobotDataset_IL2_gps, EpisodeSampler_IL
+from vint_train.data.vint_hf_dataset import FrodbotDataset_MBRA, FrodbotDataset_LogoNav, EpisodeSampler_MBRA
 
 from vint_train.training.train_eval_loop import (
     train_eval_loop,
     train_eval_loop_nomad,
-    train_eval_loop_exaug_dist_gnm_delay,
     train_eval_loop_lelan,
     train_eval_loop_lelan_col,
-    train_eval_loop_il_dist_gnm,            
-    train_eval_loop_il2_dist_gnm_gps,      
-    train_eval_loop_il_exaug_dist_gnm_gps,   
+    train_eval_loop_MBRA,    
+    train_eval_loop_LogoNav,   
     load_model,
 )
 
@@ -107,54 +105,33 @@ def main(config):
         if "waypoint_spacing" not in data_config:
             data_config["waypoint_spacing"] = 1
 
+        #Definition of main dataset (MBRA project: Frodobot-2k dataset)
         for data_split_type in ["train", "test"]:
             if data_split_type in data_config:
-                if config["project_name"] == "lelan-release":                  
-                    dataset = LeLaN_Dataset(
-                        data_split_folder=data_config[data_split_type],
-                        dataset_name=dataset_name,
-                        image_size=config["image_size"],
-                        waypoint_spacing=data_config["waypoint_spacing"],
-                        len_traj_pred=config["len_traj_pred"],
-                        learn_angle=config["learn_angle"],
-                        context_size=config["context_size"],
-                        data_split_type = data_split_type,
-                        data_image_folder = data_config["image"],
-                        data_pickle_folder = data_config["pickle"],                                             
-                        context_type=config["context_type"],
-                        normalize=config["normalize"],
-                        backside=data_config["backside"],
-                        aug_seq=data_config["aug_seq"],   
-                        only_front=data_config["only_front"],                                                      
-                    )     
-                elif config["project_name"] == "frodobot-gnm":                    
+                if config["project_name"] == "frodobot-gnm":                    
                     ratio_f = config["ratio_f"]
                     split_train_test = int(11994*ratio_f)
-                    batch_gnm = int(config["batch_size"] * (835840/4)/(835840/4 + ratio_f*11485100.0/10.0))
-                    batch_frodobot = int(config["batch_size"] - batch_gnm)    
+                     
+                    batch_gnm = int(config["batch_size"]*0.5) 
+                    batch_frodobot = config["batch_size"] - batch_gnm
+                                        
                     print("batch_gnm", batch_gnm, "batch_frodobot", batch_frodobot)                                            
                     print("frodobot", data_split_type, data_config[data_split_type])                  
                     
                     if data_split_type == "train":
-                        if config["model_type"] == "il_dist_gnm":
-                            dataset = ViNTLeRobotDataset_IL2(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], sacson=config["SACSoN"], context_spacing=3, action_spacing=3)                                          
-                            episode_sampler_train = EpisodeSampler_IL(dataset, 0, split_train_test, goal_horizon=config["horizon_short"], data_split_type=data_split_type)       
-                        elif config["model_type"] == "il2_gps" or config["model_type"] == "il_exaug_gps":        
-                            dataset = ViNTLeRobotDataset_IL2_gps(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], goal_horizon2=config["horizon_long"], sacson=config["SACSoN"], context_spacing=3, action_spacing=3)                                          
-                            episode_sampler_train = EpisodeSampler_IL(dataset, 0, split_train_test, goal_horizon=config["horizon_short"], data_split_type=data_split_type)                                             
+                        if config["model_type"] == "LogoNav":        
+                            dataset = FrodbotDataset_LogoNav(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], goal_horizon2=config["horizon_long"], sacson=config["SACSoN"], context_spacing=3, action_spacing=3)                                          
+                            episode_sampler_train = EpisodeSampler_MBRA(dataset, 0, split_train_test, goal_horizon=config["horizon_short"], data_split_type=data_split_type)                                             
                         else:
-                            dataset = ViNTLeRobotDataset(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], sacson=config["SACSoN"], context_spacing=3, action_spacing=1)                                                                                        
-                            episode_sampler_train = EpisodeSampler_IL(dataset, 0, split_train_test, goal_horizon=config["horizon_short"], data_split_type=data_split_type)                                                 
+                            dataset = FrodbotDataset_MBRA(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], sacson=config["SACSoN"], context_spacing=3, action_spacing=1)                                                                                        
+                            episode_sampler_train = EpisodeSampler_MBRA(dataset, 0, split_train_test, goal_horizon=config["horizon_short"], data_split_type=data_split_type)                                                 
                     elif data_split_type == "test":
-                        if config["model_type"] == "il_dist_gnm":
-                            dataset = ViNTLeRobotDataset_IL2(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], sacson=config["SACSoN"], context_spacing=3, action_spacing=3)                  
-                            episode_sampler_test = EpisodeSampler_IL(dataset, split_train_test, 11994-1, goal_horizon=config["horizon_short"], data_split_type=data_split_type)  
-                        elif config["model_type"] == "il2_gps" or config["model_type"] == "il_exaug_gps": 
-                            dataset = ViNTLeRobotDataset_IL2_gps(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], goal_horizon2=config["horizon_long"], sacson=config["SACSoN"], context_spacing=3, action_spacing=3)                  
-                            episode_sampler_test = EpisodeSampler_IL(dataset, split_train_test, 11994-1, goal_horizon=config["horizon_short"], data_split_type=data_split_type)                                                                                   
+                        if config["model_type"] == "LogoNav": 
+                            dataset = FrodbotDataset_LogoNav(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], goal_horizon2=config["horizon_long"], sacson=config["SACSoN"], context_spacing=3, action_spacing=3)                  
+                            episode_sampler_test = EpisodeSampler_MBRA(dataset, split_train_test, 11994-1, goal_horizon=config["horizon_short"], data_split_type=data_split_type)                                                                                   
                         else:
-                            dataset = ViNTLeRobotDataset(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], sacson=config["SACSoN"], context_spacing=3, action_spacing=1)                                                 
-                            episode_sampler_test = EpisodeSampler_IL(dataset, split_train_test, 11994-1, goal_horizon=config["horizon_short"], data_split_type=data_split_type)                                               
+                            dataset = FrodbotDataset_MBRA(repo_id=config["repo_id"], video="video", root=config["root"], image_size=config["image_size"], split="train", goal_horizon=config["horizon_short"], sacson=config["SACSoN"], context_spacing=3, action_spacing=1)                                                 
+                            episode_sampler_test = EpisodeSampler_MBRA(dataset, split_train_test, 11994-1, goal_horizon=config["horizon_short"], data_split_type=data_split_type)                                               
                 else:                
                     dataset = ViNT_Dataset(
                         data_folder=data_config["data_folder"],
@@ -184,6 +161,7 @@ def main(config):
                         test_dataloaders[dataset_type] = {}
                     test_dataloaders[dataset_type] = dataset
 
+    #Definition of sub dataset (MBRA project: GNM dataset)
     train_dataset_sub = []
     test_dataloaders_sub = {}    
     if config["project_name"] == "frodobot-gnm":             
@@ -200,7 +178,7 @@ def main(config):
 
             for data_split_type in ["train", "test"]:
                 if data_split_type in data_config_sub:
-                    if config["model_type"] == "exaug_dist_gnm_delay":            
+                    if config["model_type"] == "MBRA":            
                         dataset = ViNT_ExAug_Dataset(
                             data_folder=data_config_sub["data_folder"],
                             data_split_folder=data_config_sub[data_split_type],
@@ -221,7 +199,7 @@ def main(config):
                             normalize=config["normalize"],
                             goal_type=config["goal_type"],
                         )
-                    elif config["model_type"] == "il2_gps" or config["model_type"] == "il_exaug_gps":
+                    elif config["model_type"] == "LogoNav":
                         dataset = ViNT_Dataset_gps(
                             data_folder=data_config_sub["data_folder"],
                             data_split_folder=data_config_sub[data_split_type],
@@ -411,7 +389,7 @@ def main(config):
             prediction_type='epsilon'
         )
      
-    elif config["model_type"] == "exaug_dist_gnm_delay":
+    elif config["model_type"] == "MBRA":
         model = ExAug_dist_delay(       
             context_size=config["context_size"],
             len_traj_pred=config["len_traj_pred"],
@@ -423,91 +401,7 @@ def main(config):
             mha_num_attention_layers=config["mha_num_attention_layers"],
             mha_ff_dim_factor=config["mha_ff_dim_factor"],
         )         
-    elif config["model_type"] == "il_dist" or config["model_type"] == "il_dist_gnm" or config["model_type"] == "il_dist_gnm_vis":
-        model = IL_dist(
-            context_size=config["context_size"],
-            len_traj_pred=config["len_traj_pred"],
-            learn_angle=config["learn_angle"],
-            obs_encoder=config["obs_encoder"],
-            obs_encoding_size=config["obs_encoding_size"],
-            late_fusion=config["late_fusion"],
-            mha_num_attention_heads=config["mha_num_attention_heads"],
-            mha_num_attention_layers=config["mha_num_attention_layers"],
-            mha_ff_dim_factor=config["mha_ff_dim_factor"],
-        ) 
-    elif config["model_type"] == "il2_dist_gnm":
-        model_GNM = IL_dist(
-            context_size=config["context_size"],
-            len_traj_pred=config["len_traj_pred"],
-            learn_angle=config["learn_angle"],
-            obs_encoder=config["obs_encoder"],
-            obs_encoding_size=config["obs_encoding_size"],
-            late_fusion=config["late_fusion"],
-            mha_num_attention_heads=config["mha_num_attention_heads"],
-            mha_num_attention_layers=config["mha_num_attention_layers"],
-            mha_ff_dim_factor=config["mha_ff_dim_factor"],
-        ) 
-        model = IL_dist(
-            context_size=config["context_size"],
-            len_traj_pred=config["len_traj_pred"],
-            learn_angle=config["learn_angle"],
-            obs_encoder=config["obs_encoder"],
-            obs_encoding_size=config["obs_encoding_size"],
-            late_fusion=config["late_fusion"],
-            mha_num_attention_heads=config["mha_num_attention_heads"],
-            mha_num_attention_layers=config["mha_num_attention_layers"],
-            mha_ff_dim_factor=config["mha_ff_dim_factor"],
-        )         
-
-    elif config["model_type"] == "il_exaug_dist_gnm":
-        model_GNM = ExAug_dist_delay(
-            context_size=config["context_size"],
-            len_traj_pred=config["len_traj_pred"],
-            learn_angle=config["learn_angle"],
-            obs_encoder=config["obs_encoder"],
-            obs_encoding_size=config["obs_encoding_size"],
-            late_fusion=config["late_fusion"],
-            mha_num_attention_heads=config["mha_num_attention_heads"],
-            mha_num_attention_layers=config["mha_num_attention_layers"],
-            mha_ff_dim_factor=config["mha_ff_dim_factor"],
-        )               
-        model = IL_dist(
-            context_size=config["context_size"],
-            len_traj_pred=config["len_traj_pred"],
-            learn_angle=config["learn_angle"],
-            obs_encoder=config["obs_encoder"],
-            obs_encoding_size=config["obs_encoding_size"],
-            late_fusion=config["late_fusion"],
-            mha_num_attention_heads=config["mha_num_attention_heads"],
-            mha_num_attention_layers=config["mha_num_attention_layers"],
-            mha_ff_dim_factor=config["mha_ff_dim_factor"],
-        )  
-
-    elif config["model_type"] == "il2_gps":
-        model_GNM = IL_dist(
-            context_size=config["context_size"],
-            len_traj_pred=config["len_traj_pred"],
-            learn_angle=config["learn_angle"],
-            obs_encoder=config["obs_encoder"],
-            obs_encoding_size=config["obs_encoding_size"],
-            late_fusion=config["late_fusion"],
-            mha_num_attention_heads=config["mha_num_attention_heads"],
-            mha_num_attention_layers=config["mha_num_attention_layers"],
-            mha_ff_dim_factor=config["mha_ff_dim_factor"],
-        ) 
-        model = IL_gps(
-            context_size=config["context_size"],
-            len_traj_pred=config["len_traj_pred"],
-            learn_angle=config["learn_angle"],
-            obs_encoder=config["obs_encoder"],
-            obs_encoding_size=config["obs_encoding_size"],
-            late_fusion=config["late_fusion"],
-            mha_num_attention_heads=config["mha_num_attention_heads"],
-            mha_num_attention_layers=config["mha_num_attention_layers"],
-            mha_ff_dim_factor=config["mha_ff_dim_factor"],
-        )   
-
-    elif config["model_type"] == "il_exaug_gps":
+    elif config["model_type"] == "LogoNav":
         model_GNM = ExAug_dist_delay(
             context_size=config["context_size"],
             len_traj_pred=config["len_traj_pred"],
@@ -698,14 +592,6 @@ def main(config):
             load_model(model_GNM, config["model_type"], latest_checkpoint_exaug)
             model_GNM.eval().to(device)
 
-        if "load_il" in config:
-            load_project_folder_IL = os.path.join(config["load_il"])
-            print("Loading IL model from ", load_project_folder_IL)
-            latest_path_IL = os.path.join(load_project_folder_IL, "il_labeler.pth")
-            latest_checkpoint_IL = torch.load(latest_path_IL) 
-            load_model(model_GNM, config["model_type"], latest_checkpoint_IL)
-            model_GNM.eval().to(device)
-
         if "load_nomad" in config:
             load_project_folder = os.path.join("logs", config["load_nomad"])
             print("Loading NoMaD model from ", load_project_folder)
@@ -799,8 +685,8 @@ def main(config):
             eval_freq=config["eval_freq"],
             save_freq=config["save_freq"],
         )            
-    elif config["model_type"] == "exaug_dist_gnm_delay":
-        train_eval_loop_exaug_dist_gnm_delay(
+    elif config["model_type"] == "MBRA":
+        train_eval_loop_MBRA(
             train_model=config["train"],
             model=model,
             optimizer=optimizer,
@@ -826,66 +712,9 @@ def main(config):
             use_wandb=config["use_wandb"],
             eval_fraction=config["eval_fraction"],
             eval_freq=config["eval_freq"],
-        )          
-    elif config["model_type"] == "il_dist_gnm":        
-        train_eval_loop_il_dist_gnm(
-            train_model=config["train"],
-            model=model,
-            optimizer=optimizer,
-            lr_scheduler=scheduler,
-            train_loader=train_loader,
-            test_dataloaders=test_dataloaders,
-            train_loader_sub=train_loader_sub,
-            test_dataloaders_sub=test_dataloaders_sub,            
-            transform=transform,
-            epochs=config["epochs"],
-            sacson=config["SACSoN"],
-            device=device,
-            batch_size=config["batch_size"],
-            batch_size_test=config["eval_batch_size"], 
-            len_traj_pred=config["len_traj_pred"],           
-            project_folder=config["project_folder"],
-            print_log_freq=config["print_log_freq"],
-            wandb_log_freq=config["wandb_log_freq"],
-            image_log_freq=config["image_log_freq"],
-            num_images_log=config["num_images_log"],
-            current_epoch=current_epoch,
-            alpha=float(config["alpha"]),
-            use_wandb=config["use_wandb"],
-            eval_fraction=config["eval_fraction"],
-            eval_freq=config["eval_freq"],
-        )            
-    elif config["model_type"] == "il2_gps":
-        train_eval_loop_il2_dist_gnm_gps(
-            train_model=config["train"],
-            model=model,
-            model_GNM=model_GNM,
-            optimizer=optimizer,
-            lr_scheduler=scheduler,
-            train_loader=train_loader,
-            test_dataloaders=test_dataloaders,
-            train_loader_sub=train_loader_sub,
-            test_dataloaders_sub=test_dataloaders_sub,            
-            transform=transform,
-            epochs=config["epochs"],
-            sacson=config["SACSoN"],
-            device=device,
-            batch_size=config["batch_size"],
-            batch_size_test=config["eval_batch_size"], 
-            len_traj_pred=config["len_traj_pred"],           
-            project_folder=config["project_folder"],
-            print_log_freq=config["print_log_freq"],
-            wandb_log_freq=config["wandb_log_freq"],
-            image_log_freq=config["image_log_freq"],
-            num_images_log=config["num_images_log"],
-            current_epoch=current_epoch,
-            alpha=float(config["alpha"]),
-            use_wandb=config["use_wandb"],
-            eval_fraction=config["eval_fraction"],
-            eval_freq=config["eval_freq"],
-        )                  
-    elif config["model_type"] == "il_exaug_gps":
-        train_eval_loop_il_exaug_dist_gnm_gps(
+        )                           
+    elif config["model_type"] == "LogoNav":
+        train_eval_loop_LogoNav(
             train_model=config["train"],
             model=model,
             model_GNM=model_GNM,

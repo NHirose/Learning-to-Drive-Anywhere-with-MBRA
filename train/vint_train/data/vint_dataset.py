@@ -1203,7 +1203,7 @@ class ViNT_ExAug_Dataset(Dataset):
         else:
             self.num_action_params = 2
 
-        mask_360 = np.loadtxt(open("/media/noriaki/Noriaki_Data/learning-language-navigation_SACSoN/train/mask_360view.csv", "rb"), delimiter=",", skiprows=0)   
+        mask_360 = np.loadtxt(open("./mask_360view.csv", "rb"), delimiter=",", skiprows=0)   
         mask_360_resize = np.repeat(np.expand_dims(cv2.resize(mask_360, (832, 128)), 0), 3, 0).astype(np.float32)
         self.mask_360_torch = torch.from_numpy(mask_360_resize[:,:,0:416])
         self.mask_360_numpy = mask_360_resize[:,:,0:416]

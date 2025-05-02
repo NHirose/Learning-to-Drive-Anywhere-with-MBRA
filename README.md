@@ -59,7 +59,13 @@ Please down load our code and install some tools for making a conda environment 
 ### Dataset
 1. Prepare GNM dataset mixture. Please check [here](https://github.com/robodhruv/visualnav-transformer/tree/main)
 
-2. Prepare Frodobots-2k dataset. The Frodobots-2k dataset will be available soon...
+2. Prepare Frodobots-2k dataset. You can download the Frodobots-2k dataset from [here](https://huggingface.co/datasets/frodobots/FrodoBots-2K)
+
+3. Change the format of Frodobots-2k dataset
+    ```
+    python xxxxxxxx
+    ```
+4. Download our filtered action command by EKF and etc from [here] and place in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA/train/vint_train/data.
 
 ### Training
 0. Change the directory

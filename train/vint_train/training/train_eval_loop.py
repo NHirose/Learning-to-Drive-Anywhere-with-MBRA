@@ -6,7 +6,7 @@ from typing import List, Optional, Dict
 from prettytable import PrettyTable
 
 from vint_train.training.train_utils import train, evaluate
-from vint_train.training.train_utils import train_nomad, evaluate_nomad, train_lelan, evaluate_lelan, train_lelan_col, evaluate_lelan_col, train_exaug_dist_gnm_delay, evaluate_exaug_dist_gnm_delay, train_il_dist_gnm, evaluate_il_dist_gnm, train_il2_dist_gnm_gps, evaluate_il_dist_gnm_gps, train_il_exaug_dist_gnm_gps, train_il_exaug_dist_gnm_gps_map, evaluate_il_dist_gnm_gps_map
+from vint_train.training.train_utils import train_nomad, evaluate_nomad, train_lelan, evaluate_lelan, train_lelan_col, evaluate_lelan_col, train_MBRA, evaluate_MBRA, train_LogoNav, evaluate_LogoNav
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,11 +16,7 @@ from torchvision import transforms
 
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from diffusers.training_utils import EMAModel
-
-#from transformers import AutoImageProcessor, ZoeDepthForDepthEstimation
 from vint_train.models.depth_360 import Depth_est
-from vint_train.models.ped_est import Ped_est
-from vint_train.models.pednet import PedNet, unddp_state_dict
 
 def train_eval_loop(
     train_model: bool,
@@ -289,7 +285,7 @@ def train_eval_loop_nomad(
     wandb.log({})
 
 ###
-def train_eval_loop_exaug_dist_gnm_delay(
+def train_eval_loop_MBRA(
     train_model: bool,
     model: nn.Module,
     optimizer: Adam, 
@@ -359,9 +355,9 @@ def train_eval_loop_exaug_dist_gnm_delay(
     
     print("device_count", torch.cuda.device_count()) 
     
-    model_pedtraj = PedNet(8, 8).eval().to(device)
-    model_pedtraj_fn = os.path.join("../deployment/model_weights/pedest", "pednet.pth")
-    model_pedtraj.load_state_dict(unddp_state_dict(torch.load(model_pedtraj_fn, map_location=device)))
+    #model_pedtraj = PedNet(8, 8).eval().to(device)
+    #model_pedtraj_fn = os.path.join("../deployment/model_weights/pedest", "pednet.pth")
+    #model_pedtraj.load_state_dict(unddp_state_dict(torch.load(model_pedtraj_fn, map_location=device)))
             
     for epoch in range(current_epoch, current_epoch + epochs):
         if train_model:
@@ -370,7 +366,7 @@ def train_eval_loop_exaug_dist_gnm_delay(
             )
             if epoch % 3 == 0 and epoch != 0:
                 lr_scheduler.step()            
-            train_exaug_dist_gnm_delay(
+            train_MBRA(
                 model=model,
                 ema_model=ema_model,
                 optimizer=optimizer,
@@ -385,7 +381,7 @@ def train_eval_loop_exaug_dist_gnm_delay(
                 sacson=sacson,
                 no_emamodel=no_emamodel,
                 model_depth=model_depth,
-                model_pedtraj=model_pedtraj,
+                #model_pedtraj=model_pedtraj,
                 device2=device2,            
                 len_traj_pred=len_traj_pred,
                 batch_size=batch_size,                    
@@ -426,7 +422,7 @@ def train_eval_loop_exaug_dist_gnm_delay(
                         f"Start {dataset_type} ViNT DP Testing Epoch {epoch}/{current_epoch + epochs - 1}"
                     )
                     loader = test_dataloaders_sub[dataset_type]
-                    evaluate_exaug_dist_gnm_delay(
+                    evaluate_MBRA(
                         eval_type=dataset_type,
                         ema_model=model,
                         dataloader=loader,
@@ -436,7 +432,7 @@ def train_eval_loop_exaug_dist_gnm_delay(
                         epoch=epoch,
                         sacson=sacson,
                         model_depth=model_depth_test,
-                        model_pedtraj=model_pedtraj,
+                        #model_pedtraj=model_pedtraj,
                         device2=device2,             
                         len_traj_pred=len_traj_pred,   
                         batch_size=batch_size_test,                                                           
@@ -463,294 +459,7 @@ def train_eval_loop_exaug_dist_gnm_delay(
     wandb.log({})    
         
 ###
-def train_eval_loop_il_dist_gnm(
-    train_model: bool,
-    model: nn.Module,
-    optimizer: Adam, 
-    lr_scheduler: torch.optim.lr_scheduler._LRScheduler,
-    train_loader: DataLoader,
-    test_dataloaders: Dict[str, DataLoader],
-    train_loader_sub: DataLoader,
-    test_dataloaders_sub: Dict[str, DataLoader],    
-    transform: transforms,
-    epochs: int,
-    sacson: bool,
-    device: torch.device,
-    batch_size: int,
-    batch_size_test: int,
-    len_traj_pred: int,
-    project_folder: str,
-    print_log_freq: int = 100,
-    wandb_log_freq: int = 10,
-    image_log_freq: int = 1000,
-    num_images_log: int = 8,
-    current_epoch: int = 0,
-    alpha: float = 1e-4,
-    use_wandb: bool = True,
-    eval_fraction: float = 0.25,
-    eval_freq: int = 1,
-):
-    """
-    Train and evaluate the model for several epochs (vint or gnm models)
-
-    Args:
-        model: model to train
-        optimizer: optimizer to use
-        lr_scheduler: learning rate scheduler to use
-        noise_scheduler: noise scheduler to use
-        dataloader: dataloader for train dataset
-        test_dataloaders: dict of dataloaders for testing
-        transform: transform to apply to images
-        goal_mask_prob: probability of masking the goal token during training
-        epochs: number of epochs to train
-        device: device to train on
-        project_folder: folder to save checkpoints and logs
-        wandb_log_freq: frequency of logging to wandb
-        print_log_freq: frequency of printing to console
-        image_log_freq: frequency of logging images to wandb
-        num_images_log: number of images to log to wandb
-        current_epoch: epoch to start training from
-        alpha: tradeoff between distance and action loss
-        use_wandb: whether to log to wandb or not
-        eval_fraction: fraction of training data to use for evaluation
-        eval_freq: frequency of evaluation
-    """
-    latest_path = os.path.join(project_folder, f"latest.pth")
-    ema_model = EMAModel(model=model,power=0.75) #[TODO] for diffusion model
-    no_emamodel = False
-
-    for epoch in range(current_epoch, current_epoch + epochs):
-        if train_model:
-            print(
-            f"Start ViNT DP Training Epoch {epoch}/{current_epoch + epochs - 1}"
-            )
-            if epoch % 3 == 0 and epoch != 0:
-                lr_scheduler.step()   
-            train_il_dist_gnm(                         
-                model=model,
-                ema_model=ema_model,
-                optimizer=optimizer,
-                lr_scheduler=lr_scheduler,
-                latest_path=latest_path,
-                dataloader=train_loader,
-                dataloader_sub=train_loader_sub,                
-                transform=transform,
-                device=device,
-                project_folder=project_folder,
-                epoch=epoch,
-                sacson=sacson,
-                no_emamodel=no_emamodel,         
-                len_traj_pred=len_traj_pred,                    
-                print_log_freq=print_log_freq,
-                wandb_log_freq=wandb_log_freq,
-                image_log_freq=image_log_freq,
-                num_images_log=num_images_log,
-                use_wandb=use_wandb,
-                alpha=alpha)
-        
-        if no_emamodel:
-            numbered_path = os.path.join(project_folder, f"ema_{epoch}.pth")
-            torch.save(ema_model.averaged_model.state_dict(), numbered_path)
-            numbered_path = os.path.join(project_folder, f"ema_latest.pth")
-            print(f"Saved EMA model to {numbered_path}")
-        
-        numbered_path = os.path.join(project_folder, f"{epoch}.pth")
-        torch.save(model.state_dict(), numbered_path)
-        torch.save(model.state_dict(), latest_path)
-        print(f"Saved model to {numbered_path}")
-
-        # save optimizer
-        numbered_path = os.path.join(project_folder, f"optimizer_{epoch}.pth")
-        latest_optimizer_path = os.path.join(project_folder, f"optimizer_latest.pth")
-        torch.save(optimizer.state_dict(), latest_optimizer_path)
-
-        # save scheduler
-        numbered_path = os.path.join(project_folder, f"scheduler_{epoch}.pth")
-        latest_scheduler_path = os.path.join(project_folder, f"scheduler_latest.pth")
-        torch.save(lr_scheduler.state_dict(), latest_scheduler_path)
-        
-        if (epoch + 1) % eval_freq == 0: 
-            for dataset_type in test_dataloaders_sub:
-                print(
-                    f"Start {dataset_type} ViNT DP Testing Epoch {epoch}/{current_epoch + epochs - 1}"
-                )
-                loader = test_dataloaders_sub[dataset_type]
-                evaluate_il_dist_gnm(
-                    eval_type=dataset_type,
-                    ema_model=model,
-                    dataloader=loader,
-                    transform=transform,
-                    device=device,
-                    project_folder=project_folder,
-                    epoch=epoch,
-                    sacson=sacson,         
-                    len_traj_pred=len_traj_pred,                                    
-                    print_log_freq=print_log_freq,
-                    num_images_log=num_images_log,
-                    wandb_log_freq=wandb_log_freq,
-                    use_wandb=use_wandb,
-                    eval_fraction=eval_fraction,
-                )
-        wandb.log({
-            "lr": optimizer.param_groups[0]["lr"],
-        }, commit=False)
-
-        # log average eval loss
-        wandb.log({}, commit=False)
-
-        wandb.log({
-            "lr": optimizer.param_groups[0]["lr"],
-        }, commit=False)
-        
-    # Flush the last set of eval logs
-    wandb.log({})    
-
-###
-def train_eval_loop_il2_dist_gnm_gps(
-    train_model: bool,
-    model: nn.Module,
-    model_GNM: nn.Module,    
-    optimizer: Adam, 
-    lr_scheduler: torch.optim.lr_scheduler._LRScheduler,
-    train_loader: DataLoader,
-    test_dataloaders: Dict[str, DataLoader],
-    train_loader_sub: DataLoader,
-    test_dataloaders_sub: Dict[str, DataLoader],    
-    transform: transforms,
-    epochs: int,
-    sacson: bool,
-    device: torch.device,
-    batch_size: int,
-    batch_size_test: int,
-    len_traj_pred: int,
-    project_folder: str,
-    print_log_freq: int = 100,
-    wandb_log_freq: int = 10,
-    image_log_freq: int = 1000,
-    num_images_log: int = 8,
-    current_epoch: int = 0,
-    alpha: float = 1e-4,
-    use_wandb: bool = True,
-    eval_fraction: float = 0.25,
-    eval_freq: int = 1,
-):
-    """
-    Train and evaluate the model for several epochs (vint or gnm models)
-
-    Args:
-        model: model to train
-        optimizer: optimizer to use
-        lr_scheduler: learning rate scheduler to use
-        noise_scheduler: noise scheduler to use
-        dataloader: dataloader for train dataset
-        test_dataloaders: dict of dataloaders for testing
-        transform: transform to apply to images
-        goal_mask_prob: probability of masking the goal token during training
-        epochs: number of epochs to train
-        device: device to train on
-        project_folder: folder to save checkpoints and logs
-        wandb_log_freq: frequency of logging to wandb
-        print_log_freq: frequency of printing to console
-        image_log_freq: frequency of logging images to wandb
-        num_images_log: number of images to log to wandb
-        current_epoch: epoch to start training from
-        alpha: tradeoff between distance and action loss
-        use_wandb: whether to log to wandb or not
-        eval_fraction: fraction of training data to use for evaluation
-        eval_freq: frequency of evaluation
-    """
-    latest_path = os.path.join(project_folder, f"latest.pth")
-    ema_model = EMAModel(model=model,power=0.75) #[TODO] for diffusion model
-    no_emamodel = False
-
-    for epoch in range(current_epoch, current_epoch + epochs):
-        if train_model:
-            print(
-            f"Start ViNT DP Training Epoch {epoch}/{current_epoch + epochs - 1}"
-            )
-            if epoch % 3 == 0 and epoch != 0:
-                lr_scheduler.step()                      
-            train_il2_dist_gnm_gps(  
-                model=model,
-                model_GNM=model_GNM,
-                ema_model=ema_model,
-                optimizer=optimizer,
-                lr_scheduler=lr_scheduler,
-                latest_path=latest_path,
-                dataloader=train_loader,
-                dataloader_sub=train_loader_sub,                
-                transform=transform,
-                device=device,
-                project_folder=project_folder,
-                epoch=epoch,
-                sacson=sacson,
-                no_emamodel=no_emamodel,          
-                len_traj_pred=len_traj_pred,                    
-                print_log_freq=print_log_freq,
-                wandb_log_freq=wandb_log_freq,
-                image_log_freq=image_log_freq,
-                num_images_log=num_images_log,
-                use_wandb=use_wandb,
-                alpha=alpha)    
-        
-        if no_emamodel:
-            numbered_path = os.path.join(project_folder, f"ema_{epoch}.pth")
-            torch.save(ema_model.averaged_model.state_dict(), numbered_path)
-            numbered_path = os.path.join(project_folder, f"ema_latest.pth")
-            print(f"Saved EMA model to {numbered_path}")
-        
-        numbered_path = os.path.join(project_folder, f"{epoch}.pth")
-        torch.save(model.state_dict(), numbered_path)
-        torch.save(model.state_dict(), latest_path)
-        print(f"Saved model to {numbered_path}")
-
-        # save optimizer
-        numbered_path = os.path.join(project_folder, f"optimizer_{epoch}.pth")
-        latest_optimizer_path = os.path.join(project_folder, f"optimizer_latest.pth")
-        torch.save(optimizer.state_dict(), latest_optimizer_path)
-
-        # save scheduler
-        numbered_path = os.path.join(project_folder, f"scheduler_{epoch}.pth")
-        latest_scheduler_path = os.path.join(project_folder, f"scheduler_latest.pth")
-        torch.save(lr_scheduler.state_dict(), latest_scheduler_path)
-        
-        if (epoch + 1) % eval_freq == 0: 
-            for dataset_type in test_dataloaders_sub:
-                print(
-                    f"Start {dataset_type} ViNT DP Testing Epoch {epoch}/{current_epoch + epochs - 1}"
-                )
-                loader = test_dataloaders_sub[dataset_type]
-                evaluate_il_dist_gnm_gps(
-                    eval_type=dataset_type,
-                    ema_model=model,
-                    dataloader=loader,
-                    transform=transform,
-                    device=device,
-                    project_folder=project_folder,
-                    epoch=epoch,
-                    sacson=sacson,
-                    len_traj_pred=len_traj_pred,                                    
-                    print_log_freq=print_log_freq,
-                    num_images_log=num_images_log,
-                    wandb_log_freq=wandb_log_freq,
-                    use_wandb=use_wandb,
-                    eval_fraction=eval_fraction,
-                )
-        wandb.log({
-            "lr": optimizer.param_groups[0]["lr"],
-        }, commit=False)
-
-        # log average eval loss
-        wandb.log({}, commit=False)
-        wandb.log({
-            "lr": optimizer.param_groups[0]["lr"],
-        }, commit=False)
-        
-    # Flush the last set of eval logs
-    wandb.log({})    
-
-###
-def train_eval_loop_il_exaug_dist_gnm_gps(
+def train_eval_loop_LogoNav(
     train_model: bool,
     model: nn.Module,
     model_GNM: nn.Module,    
@@ -813,7 +522,7 @@ def train_eval_loop_il_exaug_dist_gnm_gps(
             )
             if epoch % 3 == 0 and epoch != 0:
                 lr_scheduler.step()                      
-            train_il_exaug_dist_gnm_gps(  
+            train_LogoNav(  
                 model=model,
                 model_GNM=model_GNM,
                 ema_model=ema_model,
@@ -863,7 +572,7 @@ def train_eval_loop_il_exaug_dist_gnm_gps(
                     f"Start {dataset_type} ViNT DP Testing Epoch {epoch}/{current_epoch + epochs - 1}"
                 )
                 loader = test_dataloaders_sub[dataset_type]
-                evaluate_il_dist_gnm_gps(
+                evaluate_LogoNav(
                     eval_type=dataset_type,
                     ema_model=model,
                     dataloader=loader,
@@ -889,150 +598,6 @@ def train_eval_loop_il_exaug_dist_gnm_gps(
             "lr": optimizer.param_groups[0]["lr"],
         }, commit=False)
         
-    # Flush the last set of eval logs
-    wandb.log({})    
-
-###
-def train_eval_loop_il_exaug_dist_gnm_gps_map(
-    train_model: bool,
-    model: nn.Module,
-    model_GNM: nn.Module,    
-    optimizer: Adam, 
-    lr_scheduler: torch.optim.lr_scheduler._LRScheduler,
-    #noise_scheduler: DDPMScheduler,
-    train_loader: DataLoader,
-    test_dataloaders: Dict[str, DataLoader],
-    train_loader_sub: DataLoader,
-    test_dataloaders_sub: Dict[str, DataLoader],    
-    transform: transforms,
-    #goal_mask_prob: float,
-    epochs: int,
-    sacson: bool,
-    device: torch.device,
-    batch_size: int,
-    batch_size_test: int,
-    len_traj_pred: int,
-    project_folder: str,
-    print_log_freq: int = 100,
-    wandb_log_freq: int = 10,
-    image_log_freq: int = 1000,
-    num_images_log: int = 8,
-    current_epoch: int = 0,
-    alpha: float = 1e-4,
-    use_wandb: bool = True,
-    eval_fraction: float = 0.25,
-    eval_freq: int = 1,
-):
-    """
-    Train and evaluate the model for several epochs (vint or gnm models)
-
-    Args:
-        model: model to train
-        optimizer: optimizer to use
-        lr_scheduler: learning rate scheduler to use
-        noise_scheduler: noise scheduler to use
-        dataloader: dataloader for train dataset
-        test_dataloaders: dict of dataloaders for testing
-        transform: transform to apply to images
-        goal_mask_prob: probability of masking the goal token during training
-        epochs: number of epochs to train
-        device: device to train on
-        project_folder: folder to save checkpoints and logs
-        wandb_log_freq: frequency of logging to wandb
-        print_log_freq: frequency of printing to console
-        image_log_freq: frequency of logging images to wandb
-        num_images_log: number of images to log to wandb
-        current_epoch: epoch to start training from
-        alpha: tradeoff between distance and action loss
-        use_wandb: whether to log to wandb or not
-        eval_fraction: fraction of training data to use for evaluation
-        eval_freq: frequency of evaluation
-    """
-    latest_path = os.path.join(project_folder, f"latest.pth")
-    ema_model = EMAModel(model=model,power=0.75) #[TODO] for diffusion model
-    no_emamodel = False     
-    for epoch in range(current_epoch, current_epoch + epochs):
-        if train_model:
-            print(
-            f"Start ViNT DP Training Epoch {epoch}/{current_epoch + epochs - 1}"
-            )
-            if epoch % 3 == 0 and epoch != 0:
-                lr_scheduler.step()                      
-            train_il_exaug_dist_gnm_gps_map(  
-                model=model,
-                model_GNM=model_GNM,
-                ema_model=ema_model,
-                optimizer=optimizer,
-                lr_scheduler=lr_scheduler,
-                latest_path=latest_path,
-                dataloader=train_loader,
-                dataloader_sub=train_loader_sub,                
-                transform=transform,
-                device=device,
-                project_folder=project_folder,
-                epoch=epoch,
-                sacson=sacson,
-                no_emamodel=no_emamodel,          
-                len_traj_pred=len_traj_pred,                    
-                print_log_freq=print_log_freq,
-                wandb_log_freq=wandb_log_freq,
-                image_log_freq=image_log_freq,
-                num_images_log=num_images_log,
-                use_wandb=use_wandb,
-                alpha=alpha)
-        
-        if no_emamodel:
-            numbered_path = os.path.join(project_folder, f"ema_{epoch}.pth")
-            torch.save(ema_model.averaged_model.state_dict(), numbered_path)
-            numbered_path = os.path.join(project_folder, f"ema_latest.pth")
-            print(f"Saved EMA model to {numbered_path}")
-        
-        numbered_path = os.path.join(project_folder, f"{epoch}.pth")
-        torch.save(model.state_dict(), numbered_path)
-        torch.save(model.state_dict(), latest_path)
-        print(f"Saved model to {numbered_path}")
-
-        # save optimizer
-        numbered_path = os.path.join(project_folder, f"optimizer_{epoch}.pth")
-        latest_optimizer_path = os.path.join(project_folder, f"optimizer_latest.pth")
-        torch.save(optimizer.state_dict(), latest_optimizer_path)
-
-        # save scheduler
-        numbered_path = os.path.join(project_folder, f"scheduler_{epoch}.pth")
-        latest_scheduler_path = os.path.join(project_folder, f"scheduler_latest.pth")
-        torch.save(lr_scheduler.state_dict(), latest_scheduler_path)
-        
-        if (epoch + 1) % eval_freq == 0: 
-            for dataset_type in test_dataloaders_sub:
-                print(
-                    f"Start {dataset_type} ViNT DP Testing Epoch {epoch}/{current_epoch + epochs - 1}"
-                )
-                loader = test_dataloaders_sub[dataset_type]
-                evaluate_il_dist_gnm_gps_map(
-                    eval_type=dataset_type,
-                    ema_model=model,
-                    dataloader=loader,
-                    transform=transform,
-                    device=device,
-                    project_folder=project_folder,
-                    epoch=epoch,
-                    sacson=sacson,            
-                    len_traj_pred=len_traj_pred,                                    
-                    print_log_freq=print_log_freq,
-                    num_images_log=num_images_log,
-                    wandb_log_freq=wandb_log_freq,
-                    use_wandb=use_wandb,
-                    eval_fraction=eval_fraction,
-                )
-        wandb.log({
-            "lr": optimizer.param_groups[0]["lr"],
-        }, commit=False)
-
-        wandb.log({}, commit=False)
-        wandb.log({
-            "lr": optimizer.param_groups[0]["lr"],
-        }, commit=False)
-
     # Flush the last set of eval logs
     wandb.log({})    
 
@@ -1299,7 +864,7 @@ def train_eval_loop_lelan_col(
 
 def load_model(model, model_type, checkpoint: dict) -> None:
     """Load model from checkpoint."""
-    if model_type == "nomad" or model_type == "lelan" or model_type == "lelan_col" or model_type == "exaug_dist_gnm_delay" or model_type == "il_dist_gnm" or model_type == "il2_gps" or model_type == "il_exaug_gps" or model_type == "il_exaug_gps_map":
+    if model_type == "nomad" or model_type == "lelan" or model_type == "lelan_col" or model_type == "MBRA" or model_type == "LogoNav":
         state_dict = checkpoint
         model.load_state_dict(state_dict, strict=False)
     else:
