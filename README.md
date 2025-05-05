@@ -78,7 +78,7 @@ Please down load our code and install some tools for making a conda environment 
     cd ../Learning-to-Drive-Anywhere-with-MBRA/train/
     ```
 2. Edit the yaml files in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA/train/config to make a path for all datasets and checkpoints. 
-    ```
+
 3. Train the MBRA model to reannotate the dataset,
     ```
     python train.py -c ./config/MBRA.yaml
