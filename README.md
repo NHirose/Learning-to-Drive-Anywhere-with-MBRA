@@ -48,54 +48,51 @@ Please down load our code and install some tools for making a conda environment 
     pip install -e diffusion_policy/
     ```
 
-6. Download the model weights from this [link](https://drive.google.com/file/d/1PwQAqC1doeU5rCda4ytil6eRMFuAzUbo/view?usp=sharing)
+7. Download the model weights from this [link](https://drive.google.com/file/d/1PwQAqC1doeU5rCda4ytil6eRMFuAzUbo/view?usp=sharing)
 
-7. Unzip the downloaded weights and place the folder in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA
+8. Unzip the downloaded weights and place the folder in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA
 
-8. Download the sampler file from this [link](https://drive.google.com/file/d/1PwQAqC1doeU5rCda4ytil6eRMFuAzUbo/view?usp=sharing)
+9. Download the sampler file from this [link](https://drive.google.com/file/d/1PwQAqC1doeU5rCda4ytil6eRMFuAzUbo/view?usp=sharing)
 
-9. Unzip the sampler file and place the folder in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA/train/vint_train/data
+10. Unzip the sampler file and place the folder in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA/train/vint_train/data
 
 ### Dataset
 1. Prepare GNM dataset mixture. Please check [here](https://github.com/robodhruv/visualnav-transformer/tree/main)
 
 2. Prepare Frodobots-2k dataset. You can download the Frodobots-2k dataset from [here](https://huggingface.co/datasets/frodobots/FrodoBots-2K)
 
-3. Change the format of Frodobots-2k dataset
+3. Download the repository to convert the dataset:
     ```
-    python xxxxxxxx
+    cd ..
+    git clone https://github.com/catglossop/frodo_dataset.git
     ```
-4. Download our filtered action command by EKF and etc from [here] and place in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA/train/vint_train/data.
+4. Change the format of Frodobots-2k dataset. Note that you need to specify the dataset directory and the directory to export the proccessed dataset in "convert_to_hf.py".
+    ```
+    cd frodo_dataset
+    python convert_to_hf.py
+    ```
+5. Download our filtered action command by EKF and etc from [here] and place in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA/train/vint_train/data.
 
 ### Training
-0. Change the directory
+1. Change the directory
     ```
-    cd ../train/
+    cd ../Learning-to-Drive-Anywhere-with-MBRA/train/
     ```
-1. Edit the yaml files in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA/train/config to make a path for all datasets and checkpoints
-
-2. Train the re-labeler, imitation-MBRA
+2. Edit the yaml files in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA/train/config to make a path for all datasets and checkpoints. 
     ```
-    python train.py -c ./config/MBRA_il.yaml
+3. Train the MBRA model to reannotate the dataset,
     ```
-3. Train the re-labeler, MPC-MBRA
+    python train.py -c ./config/MBRA.yaml
     ```
-    python train.py -c ./config/MBRA_exaug.yaml
+4. Train the LogoNav policy with MBRA model
     ```
-4. Train the navigation policy, LogoNav with imitation-MBRA
-    ```
-    python train.py -c ./config/LogoNav_il_label.yaml
-    ```
-5. Train the navigation policy, LogoNav with MPC-MBRA
-    ```
-    python train.py -c ./config/LogoNav_exaug_label.yaml
+    python train.py -c ./config/LogoNav.yaml
     ```
 ### Inference
-1. Now we released the trained checkpoints. We will release the code soon. 
+1. Download the model weights from this [link](https://drive.google.com/file/d/1PwQAqC1doeU5rCda4ytil6eRMFuAzUbo/view?usp=sharing) and calculate the policy to generate the actions. We will release the code soon. 
 
     
 ## Citing
-Our main project
 ```
 @inproceedings{hirose2025mbra,
   title     = {Learning to Drive Anywhere via Model-based Reannotation},
