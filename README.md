@@ -48,9 +48,9 @@ Please down load our code and install some tools for making a conda environment 
     pip install -e diffusion_policy/
     ```
 
-7. Download the model weights from this [link](https://drive.google.com/file/d/1PwQAqC1doeU5rCda4ytil6eRMFuAzUbo/view?usp=sharing)
+7. Download the model weights from this [link](https://drive.google.com/file/d/1zZpGoJYPhQDN_riUsJBR4O9lF4uhM5_B/view?usp=sharing)
 
-8. Unzip the downloaded weights and place the folder in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA
+8. Unzip the downloaded weights and place the folder in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA/deployment
 
 9. Download the sampler file from this [link](https://drive.google.com/file/d/1PwQAqC1doeU5rCda4ytil6eRMFuAzUbo/view?usp=sharing)
 
@@ -88,8 +88,7 @@ Please down load our code and install some tools for making a conda environment 
     python train.py -c ./config/LogoNav.yaml
     ```
 ### Inference
-1. Download the model weights from this [link](https://drive.google.com/file/d/1PwQAqC1doeU5rCda4ytil6eRMFuAzUbo/view?usp=sharing) and calculate the policy to generate the actions. We will release the code soon. 
-
+1. aaaaaaaaaaaaaaaaaaaaaa
     
 ## Citing
 ```
