@@ -71,7 +71,6 @@ Please down load our code and install some tools for making a conda environment 
     cd frodo_dataset
     python convert_to_hf.py
     ```
-5. Download our filtered action command by EKF and etc from [here] and place in (your-directory)/Learning-to-Drive-Anywhere-with-MBRA/train/vint_train/data.
 
 ### Training
 1. Change the directory
