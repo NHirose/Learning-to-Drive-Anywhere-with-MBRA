@@ -587,7 +587,7 @@ def main(config):
         if "load_exaug" in config:
             load_project_folder_exaug = os.path.join(config["load_exaug"])
             print("Loading ExAug model from ", load_project_folder_exaug)
-            latest_path_exaug = os.path.join(load_project_folder_exaug, "exaug_labeler.pth")
+            latest_path_exaug = os.path.join(load_project_folder_exaug, "mbra.pth")
             latest_checkpoint_exaug = torch.load(latest_path_exaug) 
             load_model(model_GNM, config["model_type"], latest_checkpoint_exaug)
             model_GNM.eval().to(device)
