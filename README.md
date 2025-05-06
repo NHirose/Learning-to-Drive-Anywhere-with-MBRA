@@ -24,7 +24,7 @@ Please down load our code and install some tools for making a conda environment 
 2. Set up the conda environment:
     ```
     cd Learning-to-Drive-Anywhere-with-MBRA
-    conda env create -f environment_mbra.yml
+    conda env create -f train/environment_mbra.yml
     ```
 3. Source the conda environment:
     ```
@@ -87,9 +87,29 @@ Please down load our code and install some tools for making a conda environment 
     ```
     python train.py -c ./config/LogoNav.yaml
     ```
-### Inference
-1. aaaaaaaaaaaaaaaaaaaaaa
-    
+### Inference (ROS)
+1. ROS system. Please setup ROS in your PC and run the following. Our node subscribes the image topic "/usb_cam/image_raw" and calculate our policy as a callback function. The goal pose at line 243 and 244 and the current robot pose at line 104, 105 and 106 in LogoNav_ros.py have to be decided by yourself. 
+    ```
+    cd ../deployment/
+    python LogoNav_ros.py
+    ```
+### Inference (FrodoBots system)    
+1. Dowload the FrodoBots SDK and setup following their website.
+    ```
+    cd ..
+    git clone https://github.com/frodobots-org/earth-rovers-sdk.git
+    ```
+2. Move our code
+    ```
+    mv ./deployment/LogoNav_frodobot.py ./deployment/earth-rovers-sdk/utils/
+    mv ./deployment/utils_logonav.py ./deployment/earth-rovers-sdk/utils/
+    ```
+3. Run our code. Before running our policy, you need to setup the Frodobots (ERZ) according to their [website](https://github.com/frodobots-org/earth-rovers-sdk). You can setup the goal pose at line 219 and 220. Note that we use our own GPS instead of the mounted GPS on Frodobot to conduct more reliable evaluation with accurate localization.
+    ```
+    cd ./deployment/utils/
+    python LogoNav_frodobot.py"
+    ```
+   
 ## Citing
 ```
 @inproceedings{hirose2025mbra,
