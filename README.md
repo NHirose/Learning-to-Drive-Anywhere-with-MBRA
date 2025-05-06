@@ -113,7 +113,7 @@ Please down load our code and install some tools for making a conda environment 
 ## Citing
 ```
 @inproceedings{hirose2025mbra,
-  title     = {Learning to Drive Anywhere via Model-based Reannotation},
+  title     = {Learning to Drive Anywhere with Model-based Reannotation},
   author    = {Noriaki Hirose and Lydia Ignatova and Kyle Stachowicz, Catherine Glossop and Sergey Levine and Dhruv Shah},
   booktitle = {arXiv},
   year      = {2025},
