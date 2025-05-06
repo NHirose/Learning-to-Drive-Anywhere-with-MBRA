@@ -2,7 +2,7 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2407.08693-df2a2a.svg)](https://arxiv.org/pdf/2407.08693)
 [![Python](https://img.shields.io/badge/python-3.10-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Static Badge](https://img.shields.io/badge/Project-Page-a)](https://learning-language-navigation.github.io)
+[![Static Badge](https://img.shields.io/badge/Project-Page-a)](https://model-base-reannotation.github.io/)
 
 
 [Noriaki Hirose](https://sites.google.com/view/noriaki-hirose/)<sup>1, 2</sup>, [Lydia Ignatova](https://www.linkedin.com/in/lydia-ignatova)<sup>1</sup>, [Kyle Stachowicz](https://kylesta.ch/)<sup>1</sup>, [Catherine Glossop](https://www.linkedin.com/in/catherineglossop/)<sup>1</sup>, [Sergey Levine](https://people.eecs.berkeley.edu/~svlevine/)<sup>1</sup>, [Dhruv Shah](https://robodhruv.github.io/)<sup>1, 3</sup>
