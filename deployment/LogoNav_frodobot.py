@@ -18,7 +18,7 @@ import pygame
 import torch
 import yaml
 from PIL import Image as PILImage
-from utils_policy import to_numpy, transform_images_exaug, load_model
+from utils_logonav import to_numpy, transform_images_mbra, load_model
 
 MODEL_WEIGHTS_PATH = "../../deployment/model_weights"
 MODEL_CONFIG_PATH = "../../train/config"
@@ -102,7 +102,7 @@ class LogoNav_run():
                 self.context_queue.append(img_PIL_resize)
                
         if len(self.context_queue) > context_size:
-            obs_images = transform_images_exaug(self.context_queue)
+            obs_images = transform_images_mbra(self.context_queue)
             obs_images = torch.split(obs_images, 3, dim=1)
             obs_images = torch.cat(obs_images, dim=1) 
             obs_images = obs_images.to(device)

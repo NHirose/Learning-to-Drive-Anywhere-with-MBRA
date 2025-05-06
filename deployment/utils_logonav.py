@@ -1,8 +1,5 @@
-DIR_loc = "/mnt/sdb/earth-rovers-sdk"
-#DIR_loc = "/home/vizbot/earth-rovers-sdk"
-
 import sys
-sys.path.insert(0, DIR_loc + '/train')
+sys.path.insert(0, '../../train')
 
 import os
 import io
