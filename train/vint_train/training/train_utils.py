@@ -1390,7 +1390,8 @@ def train_MBRA(
             viz_obs_image_past = TF.resize(obs_images[0], VISUALIZATION_IMAGE_SIZE[::-1])            
             obs_images = [transform(obs_image).to(device) for obs_image in obs_images]
             obs_image = torch.cat(obs_images, dim=1)
-                        
+            
+            # monocular depth estimation as the dynamic forward model for collision avoidance. We use the estimated proj_3d to calculate loss_geo          
             combined_current_image_depth = torch.cat((current_image_depth, current_image_depth_sub), axis=0)        
             with torch.no_grad():
                 #depth estimation
@@ -1440,7 +1441,9 @@ def train_MBRA(
             linear_vel_old_p = linear_vel_old[:, cs:cs+6]
             angular_vel_old_p = angular_vel_old[:, cs:cs+6]
 
-            vel_past = torch.cat((linear_vel_old_p, angular_vel_old_p), axis=1).unsqueeze(2)                                  
+            vel_past = torch.cat((linear_vel_old_p, angular_vel_old_p), axis=1).unsqueeze(2)  
+            
+            # MBRA model following ExAug (Detailed implementation is shown in the original paper.)
             linear_vel, angular_vel, dist_temp = model(combined_obs_image, combined_goal_image, rsize, delay, vel_past)                           
 
             for ig in range(Bf+Bg):
@@ -1452,28 +1455,31 @@ def train_MBRA(
             linear_vel_old = linear_vel.detach()
             angular_vel_old = angular_vel.detach()
                
+            # Integration of velocity commands. (Note that the generated poses are on the camera coordinate)
             px_ref_list, pz_ref_list, ry_ref_list = robot_pos_model_fix(linear_vel_d, angular_vel_d)
             px_ref = px_ref_list[-1]
             pz_ref = pz_ref_list[-1]
             ry_ref = ry_ref_list[-1]
             last_poses = torch.cat((pz_ref.unsqueeze(1), -px_ref.unsqueeze(1)), axis=1) #from camera coordinate to robot local coordinate
             
-            mat_1 = torch.cat((torch.cos(-ry_ref).unsqueeze(1), -torch.sin(-ry_ref).unsqueeze(1), 2.0 * pz_ref.unsqueeze(1)), axis=1)
-            mat_2 = torch.cat((torch.sin(-ry_ref).unsqueeze(1), torch.cos(-ry_ref).unsqueeze(1), -2.0 * px_ref.unsqueeze(1)), axis=1)
+            # Converting the poses on the camera coordinate to the transformation matrix on the robot coordinate. weight_position is weighting factor to ballance between the position and the yaw angle in the objective.
+            weight_position = 2.0
+            mat_1 = torch.cat((torch.cos(-ry_ref).unsqueeze(1), -torch.sin(-ry_ref).unsqueeze(1), weight_position * pz_ref.unsqueeze(1)), axis=1)
+            mat_2 = torch.cat((torch.sin(-ry_ref).unsqueeze(1), torch.cos(-ry_ref).unsqueeze(1), -weight_position * px_ref.unsqueeze(1)), axis=1)
             mat_3 = torch.cat((torch.zeros(Bf+Bg,1), torch.zeros(Bf+Bg,1), torch.ones(Bf+Bg,1)), axis=1).to(device)   
             last_pose_mat = torch.cat((mat_1.unsqueeze(1), mat_2.unsqueeze(1), mat_3.unsqueeze(1)), axis=1)
             
             robot_traj_list = []
             for ip in range(len(px_ref_list)):
-                mat_1 = torch.cat((torch.cos(-ry_ref_list[ip]).unsqueeze(1), -torch.sin(-ry_ref_list[ip]).unsqueeze(1), 2.0 * pz_ref_list[ip].unsqueeze(1)), axis=1)
-                mat_2 = torch.cat((torch.sin(-ry_ref_list[ip]).unsqueeze(1), torch.cos(-ry_ref_list[ip]).unsqueeze(1), -2.0 * px_ref_list[ip].unsqueeze(1)), axis=1)
+                mat_1 = torch.cat((torch.cos(-ry_ref_list[ip]).unsqueeze(1), -torch.sin(-ry_ref_list[ip]).unsqueeze(1), weight_position * pz_ref_list[ip].unsqueeze(1)), axis=1)
+                mat_2 = torch.cat((torch.sin(-ry_ref_list[ip]).unsqueeze(1), torch.cos(-ry_ref_list[ip]).unsqueeze(1), -weight_position * px_ref_list[ip].unsqueeze(1)), axis=1)
                 mat_3 = torch.cat((torch.zeros(Bf+Bg,1), torch.zeros(Bf+Bg,1), torch.ones(Bf+Bg,1)), axis=1).to(device)   
                 mat_combine = torch.cat((mat_1.unsqueeze(1), mat_2.unsqueeze(1), mat_3.unsqueeze(1)), axis=1)
                 robot_traj_list.append(mat_combine.unsqueeze(1))
             robot_traj_vec = torch.cat(robot_traj_list, axis=1)
                                  
-            local_goal_mat[:, 0,2] *= 2.0                    
-            local_goal_mat[:, 1,2] *= 2.0  
+            local_goal_mat[:, 0,2] *= weight_position                    
+            local_goal_mat[:, 1,2] *= weight_position  
             local_goal_vec = local_goal_mat.unsqueeze(1).repeat(1,8,1,1) 
                        
             combined_local_goal_mat = torch.cat((local_goal_mat.to(device), local_goal_mat_sub), axis=0)
@@ -1484,25 +1490,18 @@ def train_MBRA(
             geoloss_range = torch.cat((0.0*torch.ones(Bf,1), -0.3*torch.ones(Bf,1)), axis=1)
             combined_geoloss_range = torch.cat((geoloss_range, geoloss_range_sub), axis=0).to(device)
              
-            dist_loss = nn.functional.mse_loss(last_pose_mat[combined_goal_mask], combined_local_goal_mat.to(device)[combined_goal_mask])      
-            dist_loss_f = nn.functional.mse_loss(last_pose_mat[0:50][combined_goal_mask[0:50]], combined_local_goal_mat.to(device)[0:50][combined_goal_mask[0:50]])    
-            dist_loss_g = nn.functional.mse_loss(last_pose_mat[50:100][combined_goal_mask[50:100]], combined_local_goal_mat.to(device)[50:100][combined_goal_mask[50:100]])    
-       
+            dist_loss = nn.functional.mse_loss(last_pose_mat[combined_goal_mask], combined_local_goal_mat.to(device)[combined_goal_mask])             
             distall_loss = nn.functional.mse_loss(robot_traj_vec[combined_goal_mask, 6:14], combined_local_goal_vec.to(device)[combined_goal_mask])                                    
             diff_loss = nn.functional.mse_loss(linear_vel[:,:-1][combined_goal_mask], linear_vel[:,1:][combined_goal_mask]) + nn.functional.mse_loss(angular_vel[:,:-1][combined_goal_mask], angular_vel[:,1:][combined_goal_mask]) 
 
-            # Predict distance          
+            # Predict distance for localization
             dist_temp_loss = F.mse_loss(dist_temp.squeeze(-1), combined_distance)
-            
-            norm = 10.0
             
             #dummy for SACSoN implementation
             est_ped_traj = torch.zeros(Bf+Bg, 16)
             est_ped_traj_zeros = torch.zeros(Bf+Bg, 16)      
             ped_past_c = torch.zeros(Bf+Bg, 16)
             robot_past_c = torch.zeros(Bf+Bg, 16)
-            social_loss = nn.functional.mse_loss(est_ped_traj, est_ped_traj_zeros)
-            personal_loss = nn.functional.mse_loss(est_ped_traj, est_ped_traj_zeros)
 
             PC3D = []
             for j in range(len_traj_pred):
@@ -1528,6 +1527,14 @@ def train_MBRA(
             PC3D_cat = torch.cat(PC3D, axis=1)                    
             loss_geo = geometry_criterion_range(PC3D_cat[combined_goal_mask], rsize[:,:,0][combined_goal_mask], len_traj_pred, combined_geoloss_range[combined_goal_mask], device)
             
+            # Note that social_loss, personal_loss are not implemeted. These losses are always 0.0.
+            social_loss = nn.functional.mse_loss(est_ped_traj, est_ped_traj_zeros)
+            personal_loss = nn.functional.mse_loss(est_ped_traj, est_ped_traj_zeros)         
+                        
+            # dist_loss and distall_loss : goal reaching
+            # loss_geo : collision avoidance
+            # diff_loss : smooth velocity
+            # dist_temp_loss : localization on topological map (only for goal image-conditioned nav policy. We can ignore it for learning reannotation model.)              
             loss = 4.0*dist_loss + 0.4*distall_loss + 0.5*diff_loss + 10.0*loss_geo + 100.0*social_loss + 10.0*personal_loss + 0.001*dist_temp_loss
             
             optimizer.zero_grad()
@@ -1610,10 +1617,10 @@ def train_MBRA(
                     local_yaw,
                     linear_vel_d.cpu(),
                     angular_vel_d.cpu(),
-                    norm*ped_past_c.cpu(),
-                    norm*est_ped_traj.cpu(),
-                    norm*est_ped_traj_zeros.cpu(),
-                    norm*robot_past_c.cpu(),
+                    ped_past_c.cpu(),
+                    est_ped_traj.cpu(),
+                    est_ped_traj_zeros.cpu(),
+                    robot_past_c.cpu(),
                     last_poses.cpu(),
                     rsize.cpu(),
                     "train",
@@ -1627,7 +1634,7 @@ def train_MBRA(
 ###
 def train_LogoNav(
     model: nn.Module,
-    model_GNM: nn.Module,    
+    model_mbra: nn.Module,    
     ema_model: EMAModel,
     optimizer: Adam,
     lr_scheduler: torch.optim.lr_scheduler._LRScheduler,
@@ -1679,7 +1686,7 @@ def train_LogoNav(
     }          
     dataloader_sub_iter = iter(dataloader_sub)           
     
-    model_GNM.eval().to(device)          
+    model_mbra.eval().to(device)          
     with tqdm.tqdm(dataloader, desc="Train Batch", leave=False) as tepoch:
         for i, data in enumerate(tepoch):
             
@@ -1802,20 +1809,22 @@ def train_LogoNav(
             combined_local_yaw = torch.cat((local_yaw, torch.ones(Bsub)), axis=0)                                            
             combined_action_pred = model(combined_obs_image, combined_goal_pos_gps)   
 
+            #To simplify the implementation, we give the fixed rsize(0.3), delay(0.0) and previous velocity (going straight) for MBRA model 
             rsize = 0.3*torch.ones(B, 1, 1).to(device) #robot radius : 0 -- 1.0 m
             delay = torch.zeros(B, 1, 1).to(device)   
             linear_vel_old = 0.5*torch.ones(B, 6).float().to(device)
             angular_vel_old = 0.0*torch.ones(B, 6).float().to(device)
             vel_past = torch.cat((linear_vel_old, angular_vel_old), axis=1).unsqueeze(2)          
-             
+            
+            # MBRA model to make action annotation
             with torch.no_grad():
-                linear_vel, angular_vel, dist_estfrod = model_GNM(obs_image, goal_image2, rsize, delay, vel_past)
+                linear_vel, angular_vel, dist_estfrod = model_mbra(obs_image, goal_image2, rsize, delay, vel_past)
                                                 
             linear_vel_d = linear_vel
             angular_vel_d = angular_vel            
-                
-            px_ref_list, pz_ref_list, ry_ref_list = robot_pos_model_fix(linear_vel_d, angular_vel_d)         
             
+            # generated action commands on position space. But the coordinate is on the camera coordinate.     
+            px_ref_list, pz_ref_list, ry_ref_list = robot_pos_model_fix(linear_vel_d, angular_vel_d)         
             
             x_traj = []
             z_traj = []
@@ -1828,7 +1837,9 @@ def train_LogoNav(
             z_traj_cat = torch.cat(z_traj, axis = 1)
             yaw_traj_cat = torch.cat(yaw_traj, axis = 1)                        
             
+            #normalization factor
             metric_waypoint_spacing = 0.25*0.5
+            # converting action commands on the camera coordinate into action commands on the robot coordinate. Following ViNT, we have the sequence of pose [normalized X, normalized Y, cos(yaw), sin(yaw)].
             action_estfrod = torch.cat((z_traj_cat.unsqueeze(-1)/metric_waypoint_spacing, -x_traj_cat.unsqueeze(-1)/metric_waypoint_spacing, torch.cos(-yaw_traj_cat).unsqueeze(-1), torch.sin(-yaw_traj_cat).unsqueeze(-1)), axis=2)     
             combined_actions = torch.cat((action_estfrod.detach().to(device), action_label_sub), axis=0)   
                                                   

@@ -352,12 +352,7 @@ def train_eval_loop_MBRA(
     aug = False
     model_depth = Depth_est(h_size, w_size, bin_size, batch_img, device2, aug)
     model_depth_test = Depth_est(h_size, w_size, bin_size, batch_size_test, device2, aug)
-    
     print("device_count", torch.cuda.device_count()) 
-    
-    #model_pedtraj = PedNet(8, 8).eval().to(device)
-    #model_pedtraj_fn = os.path.join("../deployment/model_weights/pedest", "pednet.pth")
-    #model_pedtraj.load_state_dict(unddp_state_dict(torch.load(model_pedtraj_fn, map_location=device)))
             
     for epoch in range(current_epoch, current_epoch + epochs):
         if train_model:
@@ -462,7 +457,7 @@ def train_eval_loop_MBRA(
 def train_eval_loop_LogoNav(
     train_model: bool,
     model: nn.Module,
-    model_GNM: nn.Module,    
+    model_mbra: nn.Module,    
     optimizer: Adam, 
     lr_scheduler: torch.optim.lr_scheduler._LRScheduler,
     train_loader: DataLoader,
@@ -524,7 +519,7 @@ def train_eval_loop_LogoNav(
                 lr_scheduler.step()                      
             train_LogoNav(  
                 model=model,
-                model_GNM=model_GNM,
+                model_mbra=model_mbra,
                 ema_model=ema_model,
                 optimizer=optimizer,
                 lr_scheduler=lr_scheduler,

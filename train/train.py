@@ -402,7 +402,7 @@ def main(config):
             mha_ff_dim_factor=config["mha_ff_dim_factor"],
         )         
     elif config["model_type"] == "LogoNav":
-        model_GNM = ExAug_dist_delay(
+        model_mbra = ExAug_dist_delay(
             context_size=config["context_size"],
             len_traj_pred=config["len_traj_pred"],
             learn_angle=config["learn_angle"],
@@ -589,8 +589,8 @@ def main(config):
             print("Loading ExAug model from ", load_project_folder_exaug)
             latest_path_exaug = os.path.join(load_project_folder_exaug, "mbra.pth")
             latest_checkpoint_exaug = torch.load(latest_path_exaug) 
-            load_model(model_GNM, config["model_type"], latest_checkpoint_exaug)
-            model_GNM.eval().to(device)
+            load_model(model_mbra, config["model_type"], latest_checkpoint_exaug)
+            model_mbra.eval().to(device)
 
         if "load_nomad" in config:
             load_project_folder = os.path.join("logs", config["load_nomad"])
@@ -717,7 +717,7 @@ def main(config):
         train_eval_loop_LogoNav(
             train_model=config["train"],
             model=model,
-            model_GNM=model_GNM,
+            model_mbra=model_mbra,
             optimizer=optimizer,
             lr_scheduler=scheduler,
             train_loader=train_loader,

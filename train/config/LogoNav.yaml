@@ -47,8 +47,8 @@ down_dims: [64, 128, 256]
 num_diffusion_iters: 10
 
 # FrodoBot dataset ratio
-#ratio_f: 0.9
-ratio_f: 0.1
+ratio_f: 0.9
+#ratio_f: 0.1
 horizon_short: 20
 horizon_long: 100
 

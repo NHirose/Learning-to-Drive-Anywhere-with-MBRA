@@ -7,4 +7,5 @@ dataset
 lerobot
 map_cache
 train/vint_train/data/sampler
+train/config/LogoNav_.yaml
 download_youtube/videos

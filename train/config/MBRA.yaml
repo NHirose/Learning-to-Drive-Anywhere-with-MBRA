@@ -51,8 +51,8 @@ num_diffusion_iters: 10
 goal_mask_prob: 0.5
 
 # Frodobot data ratio
-#ratio_f: 0.9
-ratio_f: 0.1
+ratio_f: 0.9
+#ratio_f: 0.1
 horizon_short: 30
 
 # normalization for the action space
