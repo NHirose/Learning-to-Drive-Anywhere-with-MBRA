@@ -376,94 +376,10 @@ class FrodbotDataset_MBRA(LeRobotDataset):
             self.video_backend,
         )["observation.images.front"], flip_tf)
 
-        if self.sacson:
-            delta_timestamps_sacson = {"pedestrian.filtered_position": [i * self.dt for i in range(-30, 5)]}
-            item_pickle = load_pickle(
-                self.dataset_cache,
-                idx,
-                self.episode_data_index,
-                delta_timestamps_sacson,
-            )      
-            episode_length_prev = idx - self.episode_data_index["from"][ep_id]
-            with open("/media/noriaki/Noriaki_Data/frodobots_dataset/ped_est/" + str(int(idx)) + ".pkl", 'rb') as file:
-                data = pickle.load(file)               
-            
-            ped_dist = 1000000000.0
-            ped_select = None
-            for ip in data.keys():     
-                dist = data[ip][0]**2 + data[ip][1]**2
-                if dist < ped_dist:
-                    ped_dist = dist
-                    ped_select = ip
-            
-            ped_list = []            
-            for id_ped in item_pickle:            
-                with open("/media/noriaki/Noriaki_Data/frodobots_dataset/ped_est/" + str(int(id_ped)) + ".pkl", 'rb') as file:
-                    data = pickle.load(file)    
-                if ped_select in data.keys():                
-                    ped_list.append(data[ped_select][0:2])   
-                else:
-                    ped_list.append([]) 
-            
-            head_trans = torch.from_numpy(self.dataset_cache["observation.filtered_heading"][item_pickle])            
-            pos_trans = torch.from_numpy(self.dataset_cache["observation.filtered_position"][item_pickle]) 
-            
-            trans_cur_inv = torch.linalg.inv(trans_mat(pos_trans[30], head_trans[30]))
-            
-            ped_list_notrans = []
-            ped_local_list = []
-            robot_local_list = []            
-            for istep in range(len(ped_list)):
-                trans_fp = trans_mat(pos_trans[istep], head_trans[istep])            
-                robot_local = torch.matmul(trans_cur_inv, trans_fp)
-                if flip_tf:                
-                    robot_local_list.append([robot_local[0,2], -robot_local[1,2]]) 
-                else:
-                    robot_local_list.append([robot_local[0,2], robot_local[1,2]]) 
-                                    
-                if ped_list[istep] != []:
-                    trans_ped = torch.from_numpy(trans_mat([ped_list[istep][1], -ped_list[istep][0]], 0.0))
-                    ped_local = torch.matmul(robot_local, trans_ped)
-                    
-                    if flip_tf:
-                        ped_local_list.append([ped_local[0,2], -ped_local[1,2]])
-                        ped_list_notrans.append([ped_list[istep][1], ped_list[istep][0]])     
-                    else:
-                        ped_local_list.append([ped_local[0,2], ped_local[1,2]])
-                        ped_list_notrans.append([ped_list[istep][1], -ped_list[istep][0]])                                                        
-                else:
-                    ped_local_list.append([0.0, 0.0])
-                    ped_list_notrans.append([0.0, 0.0])
-            
-            ped_local_list_raw = ped_local_list.copy()
-            value_list = []
-            for istep in range(len(ped_list)):
-                if ped_local_list[istep] != [0.0, 0.0]:
-                     value_list.append(istep)
-            
-            #interpolation                    
-            for ii in range(len(value_list)-1):
-                gap = float(value_list[ii+1] - value_list[ii])              
-                delta_p = [(ped_local_list[value_list[ii+1]][0] - ped_local_list[value_list[ii]][0])/gap, (ped_local_list[value_list[ii+1]][1] - ped_local_list[value_list[ii]][1])/gap]
-                for jj in range(value_list[ii]+1, value_list[ii+1], 1):
-                    ped_local_list[jj] = [ped_local_list[value_list[ii]][0] + (jj - value_list[ii])*delta_p[0], ped_local_list[value_list[ii]][1] + (jj - value_list[ii])*delta_p[1]]
-
-            ped_local_torch = torch.tensor(ped_local_list)
-            for jp in range(5):
-                for ip in range(len(ped_list)-2):   
-                    if ped_local_torch[ip][0] != 0.0 and ped_local_torch[ip][1] != 0.0 and ped_local_torch[ip+1][0] != 0.0 and ped_local_torch[ip+1][1] != 0.0 and ped_local_torch[ip+2][0] != 0.0 and ped_local_torch[ip+2][1] != 0.0:
-                        ped_local_torch[ip+1] = (ped_local_torch[ip] + ped_local_torch[ip+1] + ped_local_torch[ip+2])/3.0
-
-            ped_local_slice = ped_local_torch[9:31:3]         
-            ped_local_slice_raw = ped_local_list_raw[30:7:-3][::-1] #3fps  
-            robot_local_slice = robot_local_list[30:7:-3][::-1] 
-            ped_list_no_trans = ped_list_notrans[30:7:-3][::-1]
-                               
-        else:
-            ped_list_no_trans = [0.0] #dummy
-            ped_local_slice = [0.0] #dummy
-            ped_local_slice_raw = [0.0] #dummy
-            robot_local_slice = [0.0] #dummy
+        ped_list_no_trans = [0.0] #dummy
+        ped_local_slice = [0.0] #dummy
+        ped_local_slice_raw = [0.0] #dummy
+        robot_local_slice = [0.0] #dummy
             
             
         unnorm_position = item["observation.filtered_position"][:-1]
@@ -723,86 +639,10 @@ class FrodbotDataset_LogoNav(LeRobotDataset):
             self.video_backend,
         )["observation.images.front"], flip_tf)
         
-        if self.sacson:
-            delta_timestamps_sacson = {"pedestrian.filtered_position": [i * self.dt for i in range(-30, 5)]}
-            item_pickle = load_pickle(
-                self.dataset_cache,
-                idx,
-                self.episode_data_index,
-                delta_timestamps_sacson,
-            )      
-            episode_length_prev = idx - self.episode_data_index["from"][ep_id]
-            with open("/media/noriaki/Noriaki_Data/frodobots_dataset/ped_est/" + str(int(idx)) + ".pkl", 'rb') as file:
-                data = pickle.load(file)                          
-                
-            ped_dist = 1000000000.0
-            ped_select = None
-            for ip in data.keys():     
-                dist = data[ip][0]**2 + data[ip][1]**2
-                if dist < ped_dist:
-                    ped_dist = dist
-                    ped_select = ip
-            
-            ped_list = []            
-            for id_ped in item_pickle:            
-                with open("/media/noriaki/Noriaki_Data/frodobots_dataset/ped_est/" + str(int(id_ped)) + ".pkl", 'rb') as file:
-                    data = pickle.load(file)     
-                    
-                if ped_select in data.keys():                
-                    ped_list.append(data[ped_select][0:2])   
-                else:
-                    ped_list.append([])    
-            
-            head_trans = torch.from_numpy(self.dataset_cache["observation.filtered_heading"][item_pickle])            
-            pos_trans = torch.from_numpy(self.dataset_cache["observation.filtered_position"][item_pickle]) 
-            
-            trans_cur_inv = torch.linalg.inv(trans_mat(pos_trans[30], head_trans[30]))
-            
-            ped_list_notrans = []
-            ped_local_list = []
-            robot_local_list = []            
-            for istep in range(len(ped_list)):
-                trans_fp = trans_mat(pos_trans[istep], head_trans[istep])            
-                robot_local = torch.matmul(trans_cur_inv, trans_fp)
-                robot_local_list.append([robot_local[0,2], robot_local[1,2]]) 
-                if ped_list[istep] != []:
-                    trans_ped = torch.from_numpy(trans_mat([ped_list[istep][1], -ped_list[istep][0]], 0.0))
-                    ped_local = torch.matmul(robot_local, trans_ped)
-                    ped_local_list.append([ped_local[0,2], ped_local[1,2]])
-                    ped_list_notrans.append([ped_list[istep][1], -ped_list[istep][0]])                                       
-                else:
-                    ped_local_list.append([0.0, 0.0])
-                    ped_list_notrans.append([0.0, 0.0])
-            
-            ped_local_list_raw = ped_local_list.copy()
-            value_list = []
-            for istep in range(len(ped_list)):
-                if ped_local_list[istep] != [0.0, 0.0]:
-                     value_list.append(istep)
-            
-            #interpolation                    
-            for ii in range(len(value_list)-1):
-                gap = float(value_list[ii+1] - value_list[ii])              
-                delta_p = [(ped_local_list[value_list[ii+1]][0] - ped_local_list[value_list[ii]][0])/gap, (ped_local_list[value_list[ii+1]][1] - ped_local_list[value_list[ii]][1])/gap]
-                for jj in range(value_list[ii]+1, value_list[ii+1], 1):
-                    ped_local_list[jj] = [ped_local_list[value_list[ii]][0] + (jj - value_list[ii])*delta_p[0], ped_local_list[value_list[ii]][1] + (jj - value_list[ii])*delta_p[1]]
-       
-            ped_local_torch = torch.tensor(ped_local_list)
-            for jp in range(5):
-                for ip in range(len(ped_list)-2):   
-                    if ped_local_torch[ip][0] != 0.0 and ped_local_torch[ip][1] != 0.0 and ped_local_torch[ip+1][0] != 0.0 and ped_local_torch[ip+1][1] != 0.0 and ped_local_torch[ip+2][0] != 0.0 and ped_local_torch[ip+2][1] != 0.0:
-                        ped_local_torch[ip+1] = (ped_local_torch[ip] + ped_local_torch[ip+1] + ped_local_torch[ip+2])/3.0
-
-            ped_local_slice = ped_local_torch[9:31:3]
-            ped_local_slice_raw = ped_local_list_raw[30:7:-3][::-1] #3fps  
-            robot_local_slice = robot_local_list[30:7:-3][::-1] 
-            ped_list_no_trans = ped_list_notrans[30:7:-3][::-1]
-                               
-        else:
-            ped_list_no_trans = [0.0] #dummy
-            ped_local_slice = [0.0] #dummy
-            ped_local_slice_raw = [0.0] #dummy
-            robot_local_slice = [0.0] #dummy
+        ped_list_no_trans = [0.0] #dummy
+        ped_local_slice = [0.0] #dummy
+        ped_local_slice_raw = [0.0] #dummy
+        robot_local_slice = [0.0] #dummy
          
         unnorm_position = item["observation.filtered_position"][:-1]
         current_heading = item["observation.filtered_heading"][0]
