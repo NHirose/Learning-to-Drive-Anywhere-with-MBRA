@@ -1,5 +1,5 @@
 # Learning to Drive Anywhere with Model-Based Reannotation
-[![arXiv](https://img.shields.io/badge/arXiv-2407.08693-df2a2a.svg)](https://arxiv.org/pdf/2407.08693)
+[![arXiv](https://img.shields.io/badge/arXiv-2407.08693-df2a2a.svg)](https://www.arxiv.org/abs/2505.05592)
 [![Python](https://img.shields.io/badge/python-3.10-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Static Badge](https://img.shields.io/badge/Project-Page-a)](https://model-base-reannotation.github.io/)
@@ -112,11 +112,13 @@ Please down load our code and install some tools for making a conda environment 
    
 ## Citing
 ```
-@inproceedings{hirose2025mbra,
-  title     = {Learning to Drive Anywhere with Model-based Reannotation},
-  author    = {Noriaki Hirose and Lydia Ignatova and Kyle Stachowicz, Catherine Glossop and Sergey Levine and Dhruv Shah},
-  booktitle = {arXiv},
-  year      = {2025},
-  url       = {https://arxiv.org/abs/xxxxxxxx}
+@misc{hirose2025mbra,
+      title={Learning to Drive Anywhere with Model-Based Reannotation}, 
+      author={Noriaki Hirose and Lydia Ignatova and Kyle Stachowicz and Catherine Glossop and Sergey Levine and Dhruv Shah},
+      year={2025},
+      eprint={2505.05592},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2505.05592}, 
 }
 ```
