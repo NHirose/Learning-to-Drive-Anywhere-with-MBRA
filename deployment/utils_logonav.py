@@ -1,12 +1,12 @@
 import sys
-sys.path.insert(0, '../../train')
+sys.path.insert(0, '../train')
 
 import os
 import io
 import matplotlib.pyplot as plt
 
 # ROS
-from sensor_msgs.msg import Image
+#from sensor_msgs.msg import Image
 
 # pytorch
 import torch
@@ -30,7 +30,7 @@ from vint_train.data.data_utils import IMAGE_ASPECT_RATIO
 
 from vint_train.models.lelan.lelan import LeLaN_clip, LeLaN_clip_temp, DenseNetwork_lelan
 from vint_train.models.lelan.lelan_comp import LeLaN_clip_FiLM, LeLaN_clip_FiLM_temp
-from vint_train.models.exaug.exaug import ExAug, ExAug_gps, ExAug_dist, ExAug_dist_delay
+from vint_train.models.exaug.exaug import ExAug_dist_delay
 from vint_train.models.il.il import IL_dist, IL_gps
 
 import clip
@@ -281,23 +281,6 @@ def pil2cv(image):
 	elif new_image.shape[2] == 4:
 		new_image = cv2.cvtColor(new_image, cv2.COLOR_RGBA2BGRA)
 	return new_image
-
-
-def msg_to_pil(msg: Image) -> PILImage.Image:
-    img = np.frombuffer(msg.data, dtype=np.uint8).reshape(
-        msg.height, msg.width, -1)
-    pil_image = PILImage.fromarray(img)
-    return pil_image
-
-
-def pil_to_msg(pil_img: PILImage.Image, encoding="mono8") -> Image:
-    img = np.asarray(pil_img)  
-    ros_image = Image(encoding=encoding)
-    ros_image.height, ros_image.width, _ = img.shape
-    ros_image.data = img.ravel().tobytes() 
-    ros_image.step = ros_image.width
-    return ros_image
-
 
 def to_numpy(tensor):
     return tensor.cpu().detach().numpy()

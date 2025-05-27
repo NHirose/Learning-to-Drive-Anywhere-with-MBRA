@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, '../../train')
+sys.path.insert(0, '../train')
 
 import time
 import numpy as np
@@ -20,8 +20,8 @@ import yaml
 from PIL import Image as PILImage
 from utils_logonav import to_numpy, transform_images_mbra, load_model
 
-MODEL_WEIGHTS_PATH = "../../deployment/model_weights"
-MODEL_CONFIG_PATH = "../../train/config"
+MODEL_WEIGHTS_PATH = "../deployment/model_weights"
+MODEL_CONFIG_PATH = "../train/config"
 
 MAX_V = 0.5
 MAX_W = 1.0
